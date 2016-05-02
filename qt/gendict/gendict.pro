@@ -8,11 +8,12 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += \
-    ../../gendict.cpp \
-    ../../paradigm.cpp
+    ../../src/gendict.cpp \
+    ../../src/paradigm.cpp
 
 HEADERS += \
-    ../../paradigm.h
+    ../../src/paradigm.h
 
 INCLUDEPATH += \
-    ../../include
+    ../../include \
+    ../../src
