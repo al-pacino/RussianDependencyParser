@@ -1,20 +1,22 @@
-#include "model.h"
+#include <cstdio>
+#include <cassert>
+#include <string>
+#include <sstream>
+#include <iostream>
+
+// local includes
+#include <model.h>
+
+// temporary includes
+#include <QDir>
 #include <QTextStream>
 #include <QFile>
 #include <QXmlStreamReader>
-#include <QList>
-#include <QStringList>
-#include <QProcess>
-#include <QDir>
-
-#include <cassert>
-#include <string>
-#include <iostream>
 
 using namespace std;
 
-bool
-printMorph(const QString& f1, const QString& f2, Model& m, QTextStream& out) {
+bool printMorph( const QString& f1, const QString& f2, Model& m )
+{
     QFile xmlInput(f1);
     QFile outFile(f2);
     int j = 1;
@@ -22,11 +24,11 @@ printMorph(const QString& f1, const QString& f2, Model& m, QTextStream& out) {
     bool fSnt = true;
 
     if (!xmlInput.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        out << "Can't open input file";
+		cerr << "Can't open input file" << endl;
         return false;
     }
     if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        out << "Can't open output file";
+		cerr << "Can't open output file" << endl;
         return false;
     }
     QTextStream outF(&outFile);
@@ -103,68 +105,99 @@ printMorph(const QString& f1, const QString& f2, Model& m, QTextStream& out) {
 
 //------------------------------------------------------------------------------
 
+// If filePath already is an absolute path just return it
+string AbsoluteFilePath( const string& filePath )
+{
+	return QDir::current().absoluteFilePath( filePath.c_str() ).toStdString();
+}
+
+//------------------------------------------------------------------------------
+
+const char* const TemporaryMorphFilename = "temporary_morph_file";
+const char* const ModelSubdirectoryName = "dict";
+
+bool SaveMorph( const string& modelFilename,
+	const string& textFilename, const string& morphFilename )
+{
+	QTextStream out( stderr );
+	out.setCodec( "UTF-8" );
+	Model m( ModelSubdirectoryName );
+	m.load( modelFilename.c_str(), out );
+	return printMorph( textFilename.c_str(), morphFilename.c_str(), m );
+}
+
+//------------------------------------------------------------------------------
+
+// argv: train.txt newMorphModel.txt
 bool MorphTrain( const char* argv[] )
 {
-	QTextStream out(stderr);
-	out.setCodec("UTF-8");
-	Model m("dict");
-	m.train(argv[0], out);
-	m.save(argv[1], out);
+	QTextStream out( stderr );
+	out.setCodec( "UTF-8" );
+	Model m( ModelSubdirectoryName );
+	m.train( argv[0], out );
+	m.save( argv[1], out );
 	return true;
 }
 
 //------------------------------------------------------------------------------
 
+// argv: input.txt output.txt MorphModel.txt
 bool MorphMark( const char* argv[] )
 {
-	QTextStream out(stderr);
-	out.setCodec("UTF-8");
-	Model m("dict");
-	m.load(argv[2], out);
-	return ( printMorph(argv[0], argv[1], m, out) );
+	return SaveMorph( argv[2], argv[0], argv[1] );
 }
 
 //------------------------------------------------------------------------------
 
+// argv: input.txt MorphModel.txt SyntModel.txt TURBO_PARSER
 bool SyntTrain( const char* argv[] )
 {
-	QTextStream out(stderr);
-	out.setCodec("UTF-8");
-	Model m("dict");
-	m.load(argv[1], out);
-	if( !printMorph(argv[0], "tmpFile", m, out) ) {
+	if( !SaveMorph( argv[1], argv[0], TemporaryMorphFilename ) ) {
 		return false;
 	}
-	QProcess turboParser;
-	turboParser.setProcessChannelMode(QProcess::MergedChannels);
-	/*turboParser.start(argv[3],
-			QStringList() << "--train" << "--file_train=" + dir.absoluteFilePath("tmpFile") << "--file_model=" + dir.absoluteFilePath(argv[2]));
-	turboParser.waitForFinished(-1);
-	QFile::remove("tmpFile");*/
+
+	ostringstream arguments;
+	arguments
+		<< '"' << argv[4] << '"' // path to turbo parser
+		<< " --train"
+		<< " --file_test=\"" << AbsoluteFilePath( TemporaryMorphFilename ) << '"'
+		<< " --file_model=\"" << AbsoluteFilePath( argv[2] ) << '"';
+
+	// run turboparser
+	cout << "Running '" << argv[4] <<"'" << endl;
+	system( arguments.str().c_str() );
+
+	// delete TemporaryMorphFilename
+	remove( TemporaryMorphFilename );
+
 	return true;
 }
 
 //------------------------------------------------------------------------------
 
+// argv: input.txt MorphModel.txt SyntModel.txt output.txt TURBO_PARSER
 bool SyntMark( const char* argv[] )
 {
-	QTextStream out(stderr);
-	out.setCodec("UTF-8");
-	out << "Loading model" << endl;
-	Model m("dict");
-	m.load(argv[1], out);
-	out << "Generating tmp file" << endl;
-	if( !printMorph( argv[0], "tmpFile", m, out ) ) {
+	if( !SaveMorph( argv[1], argv[0], TemporaryMorphFilename ) ) {
 		return false;
 	}
-	out << "Running TurboParser" << endl;
-	QProcess turboParser;
-	turboParser.setProcessChannelMode(QProcess::MergedChannels);
-/*	turboParser.start(argv[4],
-			QStringList() << "--test" << "--evaluate" << "--file_test=" + dir.absoluteFilePath("tmpFile")
-					<< "--file_model=" + dir.absoluteFilePath(argv[2]) << "--file_prediction=" + dir.absoluteFilePath(argv[3]));
-	turboParser.waitForFinished(-1);
-	QFile::remove("tmpFile");*/
+
+	ostringstream arguments;
+	arguments
+		<< '"' << argv[4] << '"' // path to turbo parser
+		<< " --test"
+		<< " --evaluate"
+		<< " --file_test=\"" << AbsoluteFilePath( TemporaryMorphFilename ) << '"'
+		<< " --file_model=\"" << AbsoluteFilePath( argv[2] ) << '"'
+		<< " --file_prediction=\"" + AbsoluteFilePath( argv[3] ) << '"';
+
+	// run turboparser
+	cout << "Running '" << argv[4] <<"'" << endl;
+	system( arguments.str().c_str() );
+
+	// delete TemporaryMorphFilename
+	remove( TemporaryMorphFilename );
+
 	return true;
 }
 
