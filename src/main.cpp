@@ -7,6 +7,12 @@
 #include <QProcess>
 #include <QDir>
 
+#include <cassert>
+#include <string>
+#include <iostream>
+
+using namespace std;
+
 bool
 printMorph(const QString& f1, const QString& f2, Model& m, QTextStream& out) {
     QFile xmlInput(f1);
@@ -95,76 +101,155 @@ printMorph(const QString& f1, const QString& f2, Model& m, QTextStream& out) {
     return true;
 }
 
-void
-printHelp() {
-    QTextStream out(stdout);
-    out << "Use:\n";
-    out << "\t--morphtrain train.txt newMorphModel.txt\n";
-    out << "\t--morphmark input.txt output.txt MorphModel.txt\n";
-    out << "\t--synttrain input.txt MorphModel.txt SyntModel.txt Path/To/TurboParser\n";
-    out << "\t--syntmark input.txt MorphModel.txt SyntModel.txt output.txt Path/To/TurboParser\n";
+//------------------------------------------------------------------------------
+
+bool MorphTrain( const char* argv[] )
+{
+	QTextStream out(stderr);
+	out.setCodec("UTF-8");
+	Model m("dict");
+	m.train(argv[0], out);
+	m.save(argv[1], out);
+	return true;
 }
 
-int
-main(int argc, char* argv[]) {
-    QDir dir = QDir::current();//(QCoreApplication::applicationDirPath());
-    QTextStream out(stderr);
-    out.setCodec("UTF-8");
-    if (argc < 2) {
-        printHelp();
-        return 0;
-    }
-    if (QString(argv[1]) == "--morphtrain") {
-        if (argc < 4) {
-            printHelp();
-            return 0;
-        }
-        Model m("dict");
-        m.train(argv[2], out);
-        m.save(argv[3], out);
-        return 0;
-    } else if (QString(argv[1]) == "--morphmark") {
-        if (argc < 5) {
-            printHelp();
-            return 0;
-        }
-        Model m("dict");
-        m.load(argv[4], out);
-        if (!printMorph(argv[2], argv[3], m, out)) return -1;
-    } else if (QString(argv[1]) == "--synttrain") {
-        if (argc < 6) {
-            printHelp();
-            return 0;
-        }
-        Model m("dict");
-        m.load(argv[3], out);
-        if (!printMorph(argv[2], "tmpFile", m, out)) return -1;
-        QProcess turboParser;
-        turboParser.setProcessChannelMode(QProcess::MergedChannels);
-        turboParser.start(argv[5],
-                QStringList() << "--train" << "--file_train=" + dir.absoluteFilePath("tmpFile") << "--file_model=" + dir.absoluteFilePath(argv[4]));
-        turboParser.waitForFinished(-1);
-        QFile::remove("tmpFile");
-    } else if (QString(argv[1]) == "--syntmark") {
-        if (argc < 7) {
-            printHelp();
-            return 0;
-        }
-        out << "Loading model" << endl;
-        Model m("dict");
-        m.load(argv[3], out);
-        out << "Generating tmp file" << endl;
-        if (!printMorph(argv[2], "tmpFile", m, out)) return -1;
-        out << "Running TurboParser" << endl;
-        QProcess turboParser;
-        turboParser.setProcessChannelMode(QProcess::MergedChannels);
-        turboParser.start(argv[6],
-                QStringList() << "--test" << "--evaluate" << "--file_test=" + dir.absoluteFilePath("tmpFile")
-                        << "--file_model=" + dir.absoluteFilePath(argv[4]) << "--file_prediction=" + dir.absoluteFilePath(argv[5]));
-        turboParser.waitForFinished(-1);
-        QFile::remove("tmpFile");
-    } else {
-        printHelp();
-    }
-    return 0;
+//------------------------------------------------------------------------------
+
+bool MorphMark( const char* argv[] )
+{
+	QTextStream out(stderr);
+	out.setCodec("UTF-8");
+	Model m("dict");
+	m.load(argv[2], out);
+	return ( printMorph(argv[0], argv[1], m, out) );
+}
+
+//------------------------------------------------------------------------------
+
+bool SyntTrain( const char* argv[] )
+{
+	QTextStream out(stderr);
+	out.setCodec("UTF-8");
+	Model m("dict");
+	m.load(argv[1], out);
+	if( !printMorph(argv[0], "tmpFile", m, out) ) {
+		return false;
+	}
+	QProcess turboParser;
+	turboParser.setProcessChannelMode(QProcess::MergedChannels);
+	/*turboParser.start(argv[3],
+			QStringList() << "--train" << "--file_train=" + dir.absoluteFilePath("tmpFile") << "--file_model=" + dir.absoluteFilePath(argv[2]));
+	turboParser.waitForFinished(-1);
+	QFile::remove("tmpFile");*/
+	return true;
+}
+
+//------------------------------------------------------------------------------
+
+bool SyntMark( const char* argv[] )
+{
+	QTextStream out(stderr);
+	out.setCodec("UTF-8");
+	out << "Loading model" << endl;
+	Model m("dict");
+	m.load(argv[1], out);
+	out << "Generating tmp file" << endl;
+	if( !printMorph( argv[0], "tmpFile", m, out ) ) {
+		return false;
+	}
+	out << "Running TurboParser" << endl;
+	QProcess turboParser;
+	turboParser.setProcessChannelMode(QProcess::MergedChannels);
+/*	turboParser.start(argv[4],
+			QStringList() << "--test" << "--evaluate" << "--file_test=" + dir.absoluteFilePath("tmpFile")
+					<< "--file_model=" + dir.absoluteFilePath(argv[2]) << "--file_prediction=" + dir.absoluteFilePath(argv[3]));
+	turboParser.waitForFinished(-1);
+	QFile::remove("tmpFile");*/
+	return true;
+}
+
+//------------------------------------------------------------------------------
+
+typedef bool ( *StartupFunctionPtr )( const char* argv[] );
+
+struct StartupMode {
+	const char* FirstArgument;
+	int NumberOfArguments;
+	StartupFunctionPtr StartupFunction;
+	const char* HelpString;
+};
+
+const StartupMode StartupModes[] = {
+	{ "--morphtrain", 2, MorphTrain,
+	  "--morphtrain train.txt newMorphModel.txt" },
+
+	{ "--morphmark", 3, MorphMark,
+	  "--morphmark input.txt output.txt MorphModel.txt" },
+
+	{ "--synttrain", 4, SyntTrain,
+	  "--synttrain input.txt MorphModel.txt SyntModel.txt TURBO_PARSER" },
+
+	{ "--syntmark", 5, SyntMark,
+	  "--syntmark input.txt MorphModel.txt "
+	  "SyntModel.txt output.txt TURBO_PARSER" },
+
+	{ nullptr, -1, nullptr, nullptr }
+};
+
+//------------------------------------------------------------------------------
+
+void PrintUsage( const char* programName = 0 )
+{
+	cerr << "Usage: " << ( programName != 0 ? programName : "" ) << endl
+		<< endl;
+	for( int i = 0; StartupModes[i].FirstArgument != nullptr; i++ ) {
+		assert( StartupModes[i].HelpString != nullptr );
+		if( i > 0 ) {
+			cerr << "OR" << endl;
+		}
+		cerr << "  " << StartupModes[i].HelpString << endl;
+	}
+	cerr << endl
+		<< "Where TURBO_PARSER is a path to the turbo parser program file."
+		<< endl << endl;
+}
+
+//------------------------------------------------------------------------------
+
+bool TryRun( int argc, const char* argv[] )
+{
+	bool success = false;
+	if( argc >= 2 ) {
+		// skip first two arguments
+		argc -= 2;
+		argv += 2;
+
+		const string firstArgument( argv[1] );
+		int i = 0;
+		while( StartupModes[i].FirstArgument != nullptr ) {
+			if( firstArgument == StartupModes[i].FirstArgument ) {
+				if( argc == StartupModes[i].NumberOfArguments ) {
+					success = StartupModes[i].StartupFunction( argv );
+				}
+				break;
+			}
+			i++;
+		}
+	}
+
+	if( !success ) {
+		PrintUsage();
+	}
+	return success;
+}
+
+//------------------------------------------------------------------------------
+
+int main( int argc, const char* argv[] )
+{
+	if( !TryRun( argc, argv ) ) {
+		// an error ocurred
+		return 1;
+	}
+	return 0;
 }
