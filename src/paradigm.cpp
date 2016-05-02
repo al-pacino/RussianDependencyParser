@@ -32,30 +32,48 @@ void Paradigm::save(ofstream& ofs) const
     ofs<<endl;
 }
 
-string Paradigm::LCSubstr(const string& str1, const string& str2)
+// largest common substring of two strings
+string Paradigm::LCSubstr( const string& str1, const string& str2 )
 {
-    int m = str1.size();
-    int n = str2.size();
-    int z = 0;
-    string res;
-    int L[m][n];
+	const char* a = str1.data();
+	const char* b = str2.data();
+	size_t al = str1.length();
+	size_t bl = str2.length();
 
-    for(int i = 0; i < m; i++)
-        for(int j = 0; j < n; j++){
-            if(str1[i] == str2[j]){
-                if(i == 0 || j == 0)
-                    L[i][j] = 1;
-                else
-                    L[i][j] = L[i - 1][j - 1] + 1;
-                if(L[i][j] > z){
-                    z = L[i][j];
-                    res = str1.substr(i - z + 1, z);
-                }
-            }else{
-                L[i][j] = 0;
-            }
-        }
-    return res;
+	if( bl < al ) {
+		// for optimal memory usage
+		swap( a, b );
+		swap( al, bl );
+	}
+
+	size_t* previous = new size_t[bl];
+	size_t* current = new size_t[bl];
+	size_t lcsLength = 0;
+	size_t lcsOffset = 0;
+
+	for( size_t i = 0; i < al; ++i ) {
+		for( size_t j = 0; j < bl; ++j ) {
+			if( a[i] == b[j] ) {
+				if( i == 0 || j == 0 ) {
+					current[j] = 1;
+				} else {
+					current[j] = 1 + previous[j - 1];
+				}
+				if( lcsLength < current[j] ) {
+					lcsLength = current[j];
+					lcsOffset = i;
+				}
+			} else {
+				current[j] = 0;
+			}
+		}
+		swap( previous, current );
+	}
+
+	delete[] previous;
+	delete[] current;
+
+	return string( a + lcsOffset + 1 - lcsLength, a + lcsOffset + 1 );
 }
 
 bool Paradigm::operator==(const Paradigm& other) const
