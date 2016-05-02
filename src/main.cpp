@@ -6,7 +6,6 @@
 #include <QStringList>
 #include <QProcess>
 #include <QDir>
-#include <QApplication>
 
 bool
 printMorph(const QString& f1, const QString& f2, Model& m, QTextStream& out) {
@@ -108,7 +107,6 @@ printHelp() {
 
 int
 main(int argc, char* argv[]) {
-    QApplication app(argc, argv);
     QDir dir = QDir::current();//(QCoreApplication::applicationDirPath());
     QTextStream out(stderr);
     out.setCodec("UTF-8");
