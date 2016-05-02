@@ -253,11 +253,12 @@ bool TryRun( int argc, const char* argv[] )
 {
 	bool success = false;
 	if( argc >= 2 ) {
+		const string firstArgument( argv[1] );
+
 		// skip first two arguments
 		argc -= 2;
 		argv += 2;
 
-		const string firstArgument( argv[1] );
 		int i = 0;
 		while( StartupModes[i].FirstArgument != nullptr ) {
 			if( firstArgument == StartupModes[i].FirstArgument ) {
