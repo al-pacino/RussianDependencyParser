@@ -15,4 +15,4 @@ HEADERS += \
     ../../paradigm.h
 
 INCLUDEPATH += \
-    ../../
+    ../../include
