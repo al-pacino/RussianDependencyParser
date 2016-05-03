@@ -29,7 +29,7 @@ class Model {
 		double Test( const string& filename, ostream& out );
 		void Print( ostream& out );
 		StringPair Predict( const string& prevTag, const string& curWord );
-        QList<StringPair> getTags(const QString &word, QList<ulong> &probs);
+		QList<StringPair> GetTags( const string& word, QList<ulong> &probs );
 		bool Save( const string& filename, ostream& out );
 		bool Load( const string& filename, ostream& out );
 

@@ -191,7 +191,7 @@ void Model::Print( ostream& out )
 StringPair Model::Predict( const string& prevTag, const string& curWord )
 {
     QList<ulong> probs;
-	QList<StringPair> variants = getTags(curWord.c_str(), probs);
+	QList<StringPair> variants = GetTags( curWord, probs );
     uint maxVariant = 0;
     if (variants[maxVariant].second == "PNKT" || variants[maxVariant].second == "NUMB" ||
             variants[maxVariant].second == "LATN" || variants[maxVariant].second == "UNKN") {
@@ -206,38 +206,38 @@ StringPair Model::Predict( const string& prevTag, const string& curWord )
     return variants[maxVariant];
 }
 
-QList<StringPair>
-Model::getTags(const QString& word, QList<ulong>& probs) {
+QList<StringPair> Model::GetTags( const string& word, QList<ulong> &probs )
+{
     err.setCodec("UTF-8");
     QList<StringPair> result;
     result.clear();
     probs.clear();
     QChar yo = QString::fromUtf8("Ё")[0];
     QChar ye = QString::fromUtf8("Е")[0];
-    result = getNFandTags(word.toUpper().replace(yo, ye, Qt::CaseInsensitive));
+	result = getNFandTags(QString(word.c_str()).toUpper().replace(yo, ye, Qt::CaseInsensitive));
     if (result.size() > 0) {
         for (QList<StringPair>::iterator i = result.begin(); i != result.end(); ++i) {
             probs.append(1);
         }
         return result;
     }
-    if (word[0].isPunct()) {
-        result.append(StringPair(word, "PNCT"));
+	if (QChar(word[0]).isPunct()) {
+		result.append(StringPair(word.c_str(), "PNCT"));
         probs.append(1);
-    } else if (word[0].isNumber()) {
-        result.append(StringPair(word, "NUMB"));
+	} else if (QChar(word[0]).isNumber()) {
+		result.append(StringPair(word.c_str(), "NUMB"));
         probs.append(1);
-    } else if (word[0].toLatin1() != 0) {
-        result.append(StringPair(word, "LATN"));
+	} else if (QChar(word[0]).toLatin1() != 0) {
+		result.append(StringPair(word.c_str(), "LATN"));
         probs.append(1);
     } else {
-        QVector<QPair<QString, uint> > predictedTags = getTagsAndCount(word.toUpper().right(3));
+		QVector<QPair<QString, uint> > predictedTags = getTagsAndCount(QString(word.c_str()).toUpper().right(3));
         if (predictedTags.size() == 0) {
-            result.append(StringPair(word, "UNKN"));
+			result.append(StringPair(word.c_str(), "UNKN"));
             probs.append(1);
         }
         for (QVector<QPair<QString, uint> >::const_iterator itr = predictedTags.begin(); itr != predictedTags.end(); ++itr) {
-            result.append(StringPair(word, (*itr).first));
+			result.append(StringPair(word.c_str(), (*itr).first));
             probs.append((*itr).second);
         }
     }
