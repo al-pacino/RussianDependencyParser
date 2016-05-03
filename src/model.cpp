@@ -253,16 +253,32 @@ StringPair Model::Predict( const string& prevTag, const string& curWord )
 	return variants[bestIndex];
 }
 
+static string utf8makeUppercase( const string& text )
+{
+	return QString::fromStdString( text ).toUpper().toStdString();
+}
+
+static string utf8replaceYoByYe( const string& text )
+{
+	QChar yo = QString::fromUtf8("Ё")[0];
+	QChar ye = QString::fromUtf8("Е")[0];
+	return QString::fromStdString( text ).replace( yo, ye ).toStdString();
+}
+
+static string utf8suffix( const string& text, size_t count )
+{
+	return QString::fromStdString( text ).right( count ).toStdString();
+}
+
 void Model::GetTags( const string& word,
 	vector<StringPair>& variants, vector<uint>& probs ) const
 {
 	variants.clear();
 	probs.clear();
-	QChar yo = QString::fromUtf8("Ё")[0];
-	QChar ye = QString::fromUtf8("Е")[0];
-	string _word = QString::fromStdString(word).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString();
 
-	getNFandTags( _word, variants );
+	const string uppercaseWord = utf8makeUppercase( word );
+	getNFandTags( utf8replaceYoByYe( uppercaseWord ), variants );
+
 	if( variants.empty() ) {
 		QChar firstChar = QString::fromStdString( word )[0];
 		if (firstChar.isPunct()) {
@@ -272,9 +288,7 @@ void Model::GetTags( const string& word,
 		} else if (firstChar.toLatin1() != 0) {
 			variants.push_back( StringPair( word, "LATN" ) );
 		} else {
-			string _word = QString(word.c_str()).toUpper().right(3).toStdString();
-
-			getTagsAndCount( _word, variants, probs );
+			getTagsAndCount( utf8suffix( uppercaseWord, 3 ), variants, probs );
 
 			for( auto i = variants.begin(); i != variants.end(); ++i ) {
 				i->first = word;
