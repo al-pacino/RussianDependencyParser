@@ -173,19 +173,18 @@ double Model::Test( const string& filename, ostream& out )
     return true;
 }
 
-void
-Model::print(QTextStream& out) {
-    out.setCodec("UTF-8");
+void Model::Print( ostream& out )
+{
     QHash<StringPair, ulong>::const_iterator i;
     QHash<QString, ulong> count;
     for (i = countTagsPair.begin(); i != countTagsPair.end(); ++i) {
-        out << i.key().first << " before " << i.key().second << " : " << i.value() << endl;
+		out << i.key().first.toStdString() << " before " << i.key().second.toStdString() << " : " << i.value() << endl;
         count[i.key().first] += i.value();
     }
 
     QHash<QString, ulong>::const_iterator j;
     for (j = count.begin(); j != count.end(); ++j) {
-        out << j.key() << " " << j.value() << endl;
+		out << j.key().toStdString() << " " << j.value() << endl;
     }
 }
 

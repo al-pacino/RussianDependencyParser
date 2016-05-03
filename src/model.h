@@ -27,7 +27,7 @@ class Model {
         virtual ~Model();
 		bool Train( const string& filename, ostream& out );
 		double Test( const string& filename, ostream& out );
-        void print(QTextStream &out);
+		void Print( ostream& out );
         StringPair predict(const QString &prevTag, const QString &curWord);
         QList<StringPair> getTags(const QString &word, QList<ulong> &probs);
 		bool Save( const string& filename, ostream& out );
