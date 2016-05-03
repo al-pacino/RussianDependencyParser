@@ -1,6 +1,7 @@
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
+#include <cassert>
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -34,7 +35,8 @@ public:
 	double Test( const string& filename, ostream& out );
 	void Print( ostream& out ) const;
 	StringPair Predict( const string& prevTag, const string& curWord );
-	QList<StringPair> GetTags( const string& word, QList<uint> &probs );
+	void GetTags( const string& word,
+		vector<StringPair>& variants, vector<uint>& probs ) const;
 
 private:
 	struct pair_hash {
@@ -54,8 +56,9 @@ private:
 	marisa::Trie words;
 	marisa::Trie ends;
 
-	QList<StringPair> getNFandTags( const string& key ) const;
-	vector< pair<string, uint> > getTagsAndCount( const string& key ) const;
+	void getNFandTags( const string& key, vector<StringPair>& variants ) const;
+	void getTagsAndCount( const string& key,
+		vector<StringPair>& variants, vector<uint>& probs ) const;
 };
 
 #endif

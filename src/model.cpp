@@ -195,63 +195,77 @@ void Model::Print( ostream& out ) const
 
 StringPair Model::Predict( const string& prevTag, const string& curWord )
 {
-	QList<uint> probs;
-	QList<StringPair> variants = GetTags( curWord, probs );
-    uint maxVariant = 0;
-    if (variants[maxVariant].second == "PNKT" || variants[maxVariant].second == "NUMB" ||
-            variants[maxVariant].second == "LATN" || variants[maxVariant].second == "UNKN") {
-        return variants[maxVariant];
-    }
-    Q_ASSERT(probs.size() == variants.size());
-    for (int i = 0; i < variants.size(); ++i) {
-		if (probs[i] * countTagsPair[StringPair(prevTag.c_str(), variants[i].second)] > probs[maxVariant] * countTagsPair[StringPair(prevTag.c_str(), variants[maxVariant].second)]) {
-            maxVariant = i;
-        }
-    }
-    return variants[maxVariant];
+	vector<uint> probs;
+	vector<StringPair> variants;
+	GetTags( curWord, variants, probs );
+	assert( probs.size() == variants.size() );
+
+	if( variants.front().second == "PNKT"
+		|| variants.front().second == "NUMB"
+		|| variants.front().second == "LATN"
+		|| variants.front().second == "UNKN" )
+	{
+		return variants.front();
+	}
+
+	uint best = 0;
+	size_t bestIndex = 0;
+
+	StringPair tmp( prevTag, "" );
+	for( size_t i = 0; i < variants.size(); i++ ) {
+		tmp.second = variants[i].second;
+		const uint current = probs[i] * countTagsPair[tmp];
+		if( best < current ) {
+			best = current;
+			bestIndex = i;
+		}
+	}
+
+	return variants[bestIndex];
 }
 
-QList<StringPair> Model::GetTags( const string& word, QList<uint> &probs )
+void Model::GetTags( const string& word,
+	vector<StringPair>& variants, vector<uint>& probs ) const
 {
-    QList<StringPair> result;
-    result.clear();
-    probs.clear();
-    QChar yo = QString::fromUtf8("Ё")[0];
-    QChar ye = QString::fromUtf8("Е")[0];
-	result = getNFandTags(QString::fromStdString(word).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString());
-	if (result.size() > 0) {
-        for (QList<StringPair>::iterator i = result.begin(); i != result.end(); ++i) {
-            probs.append(1);
-        }
-        return result;
-    }
-	QChar firstChar = QString::fromStdString( word )[0];
-	if (firstChar.isPunct()) {
-		result.append( StringPair( word, "PNCT" ) );
-		probs.append( 1 );
-	} else if (firstChar.isNumber()) {
-		result.append( StringPair( word, "NUMB" ) );
-		probs.append( 1 );
-	} else if (firstChar.toLatin1() != 0) {
-		result.append( StringPair( word, "LATN" ) );
-		probs.append( 1 );
-    } else {
-		vector< pair<string, uint> > predictedTags = getTagsAndCount(QString(word.c_str()).toUpper().right(3).toStdString());
-		if( predictedTags.size() == 0 ) {
-			result.append( StringPair( word, "UNKN" ) );
-			probs.append( 1 );
-        }
-		for( auto i = predictedTags.cbegin(); i != predictedTags.cend(); ++i ) {
-			result.append( StringPair( word, i->first ) );
-			probs.append( i->second );
-        }
-    }
-    return result;
+	variants.clear();
+	probs.clear();
+	QChar yo = QString::fromUtf8("Ё")[0];
+	QChar ye = QString::fromUtf8("Е")[0];
+	string _word = QString::fromStdString(word).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString();
+
+	getNFandTags( _word, variants );
+	if( variants.empty() ) {
+		QChar firstChar = QString::fromStdString( word )[0];
+		if (firstChar.isPunct()) {
+			variants.push_back( StringPair( word, "PNCT" ) );
+		} else if (firstChar.isNumber()) {
+			variants.push_back( StringPair( word, "NUMB" ) );
+		} else if (firstChar.toLatin1() != 0) {
+			variants.push_back( StringPair( word, "LATN" ) );
+		} else {
+			string _word = QString(word.c_str()).toUpper().right(3).toStdString();
+
+			getTagsAndCount( _word, variants, probs );
+
+			for( auto i = variants.begin(); i != variants.end(); ++i ) {
+				i->first = word;
+			}
+
+			if( variants.empty() ) {
+				variants.push_back( StringPair( word, "UNKN" ) );
+			}
+		}
+	}
+
+	if( probs.empty() ) {
+		probs.resize( variants.size(), 1 );
+	}
 }
 
-QList<StringPair> Model::getNFandTags( const string& key ) const
+void Model::getNFandTags( const string& key, vector<StringPair>& variants ) const
 {
-	QList<StringPair> res;
+	variants.clear();
+
 	marisa::Agent agent;
 	const string agentQuery = key + " "; // because agent don't copy query
 	agent.set_query( agentQuery.data(), agentQuery.length() );
@@ -275,15 +289,17 @@ QList<StringPair> Model::getNFandTags( const string& key ) const
 		normalForm = normalForm.substr(prefix.size());
 		prefix = prefixes[paradigms[p].getPrefix(0)];
 		normalForm = prefix + normalForm;
-		res.append( make_pair( normalForm, tags[paradigms[p].getTags(n)] ) );
+		variants.push_back( StringPair( normalForm,
+			tags[paradigms[p].getTags( n )] ) );
 	}
-
-	return res;
 }
 
-vector< pair<string, uint> > Model::getTagsAndCount( const string& key ) const
+void Model::getTagsAndCount( const string& key,
+	vector<StringPair>& variants, vector<uint>& probs ) const
 {
-	vector< pair<string, uint> > res;
+	variants.clear();
+	probs.clear();
+
 	marisa::Agent agent;
 	const string agentQuery = key + " "; // because agent don't copy query
 	agent.set_query( agentQuery.data(), agentQuery.length() );
@@ -298,9 +314,9 @@ vector< pair<string, uint> > Model::getTagsAndCount( const string& key ) const
 		sscanf(buf, "%s %d %u", b, &p, &n);
 		delete [] b;
 		delete [] buf;
-		res.push_back( make_pair( tags[p], n ) );
+		variants.push_back( StringPair( "", tags[p] ) );
+		probs.push_back( n );
 	}
-	return res;
 }
 
 Model::~Model()
