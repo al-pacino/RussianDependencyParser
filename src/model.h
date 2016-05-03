@@ -26,7 +26,7 @@ class Model {
     public:
         Model(const char *dictdir);
         virtual ~Model();
-		bool Save( const string& filename, ostream& out );
+		bool Save( const string& filename, ostream& out ) const;
 		bool Load( const string& filename, ostream& out );
 		bool Train( const string& filename, ostream& out );
 		double Test( const string& filename, ostream& out );

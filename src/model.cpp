@@ -61,23 +61,23 @@ Model::Model(const char *dictdir)
     ifs.close();
 }
 
-bool Model::Save( const string& filename, ostream& out )
+bool Model::Save( const string& filename, ostream& out ) const
 {
-	QFile fout( filename.c_str() );
-    if (!fout.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        out << "ERROR: cannot open model file" << endl;
-        return false;
-    }
-    QTextStream sfout(&fout);
-    sfout.setCodec("CP1251");
+	ofstream model( filename, ios::out | ios::trunc );
 
-    for (QHash<StringPair, ulong>::const_iterator itr = countTagsPair.begin(); itr != countTagsPair.end(); ++itr) {
-        sfout << itr.key().first << " " << itr.key().second << " " << itr.value() << " ";
-    }
-    sfout << "----------";
-    fout.flush();
-    fout.close();
-    return true;
+	if( model.good() ) {
+		for( QHash<StringPair, ulong>::const_iterator itr = countTagsPair.begin(); itr != countTagsPair.end(); ++itr) {
+			model << itr.key().first.toStdString() << " "
+				<< itr.key().second.toStdString() << " " << itr.value() << " ";
+		}
+		model << "----------";
+	}
+
+	if( !model.good() ) {
+		out << "error: cannot open or write model file '" << filename << "'" << endl;
+		return false;
+	}
+	return true;
 }
 
 bool Model::Load( const string& filename, ostream& out )
