@@ -66,7 +66,7 @@ bool Model::Save( const string& filename, ostream& out ) const
 	ofstream model( filename, ios::out | ios::trunc );
 
 	if( model.good() ) {
-		for( QHash<StringPair, ulong>::const_iterator itr = countTagsPair.begin(); itr != countTagsPair.end(); ++itr) {
+		for( QHash<StringPair, uint>::const_iterator itr = countTagsPair.begin(); itr != countTagsPair.end(); ++itr) {
 			model << itr.key().first.toStdString() << " "
 				<< itr.key().second.toStdString() << " " << itr.value() << " ";
 		}
@@ -149,7 +149,7 @@ double Model::Test( const string& filename, ostream& out )
     }
 
     QString curTag, prevTag = "NONE";
-    ulong countAll = 0, countWrong = 0;
+	uint countAll = 0, countWrong = 0;
 
     QTextStream sfin(&fin);
     sfin.setCodec("UTF-8");
@@ -179,14 +179,14 @@ double Model::Test( const string& filename, ostream& out )
 
 void Model::Print( ostream& out )
 {
-    QHash<StringPair, ulong>::const_iterator i;
-    QHash<QString, ulong> count;
+	QHash<StringPair, uint>::const_iterator i;
+	QHash<QString, uint> count;
     for (i = countTagsPair.begin(); i != countTagsPair.end(); ++i) {
 		out << i.key().first.toStdString() << " before " << i.key().second.toStdString() << " : " << i.value() << endl;
         count[i.key().first] += i.value();
     }
 
-    QHash<QString, ulong>::const_iterator j;
+	QHash<QString, uint>::const_iterator j;
     for (j = count.begin(); j != count.end(); ++j) {
 		out << j.key().toStdString() << " " << j.value() << endl;
     }
@@ -194,7 +194,7 @@ void Model::Print( ostream& out )
 
 StringPair Model::Predict( const string& prevTag, const string& curWord )
 {
-    QList<ulong> probs;
+	QList<uint> probs;
 	QList<StringPair> variants = GetTags( curWord, probs );
     uint maxVariant = 0;
     if (variants[maxVariant].second == "PNKT" || variants[maxVariant].second == "NUMB" ||
@@ -210,7 +210,7 @@ StringPair Model::Predict( const string& prevTag, const string& curWord )
     return variants[maxVariant];
 }
 
-QList<StringPair> Model::GetTags( const string& word, QList<ulong> &probs )
+QList<StringPair> Model::GetTags( const string& word, QList<uint> &probs )
 {
     QList<StringPair> result;
     result.clear();

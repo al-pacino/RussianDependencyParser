@@ -1,6 +1,7 @@
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
+#include <cstddef>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -22,6 +23,8 @@ typedef QPair<QString, QString> StringPair;
 typedef unsigned char uchar;
 typedef unsigned int uint;
 
+#define ulong $
+
 class Model {
     public:
         Model(const char *dictdir);
@@ -32,11 +35,11 @@ class Model {
 		double Test( const string& filename, ostream& out );
 		void Print( ostream& out );
 		StringPair Predict( const string& prevTag, const string& curWord );
-		QList<StringPair> GetTags( const string& word, QList<ulong> &probs );
+		QList<StringPair> GetTags( const string& word, QList<uint> &probs );
 
     private:
-        QHash<StringPair, ulong> countTagsPair;
-        ulong countWords;
+		QHash<StringPair, uint> countTagsPair;
+		uint countWords;
 
         Paradigm *paradigms;
         string *prefixes;
