@@ -88,7 +88,7 @@ bool printMorph( const QString& f1, const QString& f2, Model& m )
                 if (type.size() == 0) type = "punct";
                 outF << id << "\t"
                         << word << "\t"
-						<< predicted.first.c_str() << "\t"
+						<< QString::fromUtf8( predicted.first.c_str() ) << "\t"
                         << Pos << "\t"
                         << Pos << "\t"
                         << tags << "\t"
