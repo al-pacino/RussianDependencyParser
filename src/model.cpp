@@ -4,9 +4,6 @@
 #include <sstream>
 #include <iostream>
 
-// temporary includes
-#include <QString>
-
 // local includes
 #include <model.h>
 
@@ -307,6 +304,26 @@ static string utf8suffix( const string& text, size_t count )
 	return text.substr( offset );
 }
 
+// return true if word starts with punctuation mark
+static bool utf8startswithPunctuationMark( const string& word )
+{
+	static const string puncts( "!\"'(),-.:;?[]" );
+	return ( puncts.find( word[0] ) != string::npos );
+}
+
+// return true if word starts with digit
+static bool utf8startswithDigit( const string& word )
+{
+	return ( word[0] >= '0' && word[0] <= '9' );
+}
+
+// return true if word starts with latin letter
+static bool utf8startswithLatinLetter( const string& word )
+{
+	return ( word[0] >= 'a' && word[0] <= 'z'
+		|| word[0] >= 'A' && word[0] <= 'Z' );
+}
+
 void Model::GetTags( const string& word,
 	vector<StringPair>& variants, vector<uint>& probs ) const
 {
@@ -317,12 +334,11 @@ void Model::GetTags( const string& word,
 	getNFandTags( utf8replaceYoWithYe( uppercaseWord ), variants );
 
 	if( variants.empty() ) {
-		QChar firstChar = QString::fromStdString( word )[0];
-		if (firstChar.isPunct()) {
+		if( utf8startswithPunctuationMark( word ) ) {
 			variants.push_back( StringPair( word, "PNCT" ) );
-		} else if (firstChar.isNumber()) {
+		} else if( utf8startswithDigit( word ) ) {
 			variants.push_back( StringPair( word, "NUMB" ) );
-		} else if (firstChar.toLatin1() != 0) {
+		} else if( utf8startswithLatinLetter( word ) ) {
 			variants.push_back( StringPair( word, "LATN" ) );
 		} else {
 			getTagsAndCount( utf8suffix( uppercaseWord, 3 ), variants, probs );
