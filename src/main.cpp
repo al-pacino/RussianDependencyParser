@@ -63,7 +63,7 @@ bool printMorph( const QString& f1, const QString& f2, Model& m )
                 }
 
 				StringPair predicted = m.Predict(prevTag.toStdString(), word.toStdString());
-                prevTag = predicted.second;
+				prevTag = predicted.second.c_str();
                 token = xmlReader.readNext();
                 if (xmlReader.name() != "rel") {
                     return false;
@@ -72,7 +72,7 @@ bool printMorph( const QString& f1, const QString& f2, Model& m )
                 QString type = xmlReader.attributes().value("type").toString();
 
                 QStringList lineParts;
-                lineParts = predicted.second.split(",");
+				lineParts = QString( predicted.second.c_str() ).split(",");
                 QString Pos = lineParts[0];
                 QString tags = "";
                 for (int i = 1; i < lineParts.size(); ++i) {
@@ -88,7 +88,7 @@ bool printMorph( const QString& f1, const QString& f2, Model& m )
                 if (type.size() == 0) type = "punct";
                 outF << id << "\t"
                         << word << "\t"
-                        << predicted.first << "\t"
+						<< predicted.first.c_str() << "\t"
                         << Pos << "\t"
                         << Pos << "\t"
                         << tags << "\t"
@@ -119,11 +119,9 @@ const char* const ModelSubdirectoryName = "dict";
 bool SaveMorph( const string& modelFilename,
 	const string& textFilename, const string& morphFilename )
 {
-	QTextStream out( stderr );
-	out.setCodec( "UTF-8" );
-	Model m( ModelSubdirectoryName );
-	m.Load( modelFilename, cerr );
-	return printMorph( textFilename.c_str(), morphFilename.c_str(), m );
+	Model model( ModelSubdirectoryName );
+	model.Load( modelFilename, cerr );
+	return printMorph( textFilename.c_str(), morphFilename.c_str(), model );
 }
 
 //------------------------------------------------------------------------------

@@ -19,11 +19,9 @@
 
 using namespace std;
 
-typedef QPair<QString, QString> StringPair;
+typedef pair<string, string> StringPair;
 typedef unsigned char uchar;
 typedef unsigned int uint;
-
-#define ulong $
 
 class Model {
     public:
@@ -33,12 +31,19 @@ class Model {
 		bool Load( const string& filename, ostream& out );
 		bool Train( const string& filename, ostream& out );
 		double Test( const string& filename, ostream& out );
-		void Print( ostream& out );
+		void Print( ostream& out ) const;
 		StringPair Predict( const string& prevTag, const string& curWord );
 		QList<StringPair> GetTags( const string& word, QList<uint> &probs );
 
     private:
-		QHash<StringPair, uint> countTagsPair;
+		struct pair_hash {
+			size_t operator () ( const pair<string, string>& p ) const
+			{
+				return hash<string>()( p.first ) ^ hash<string>()( p.second );
+			}
+		};
+
+		unordered_map<StringPair, uint, pair_hash> countTagsPair;
 		uint countWords;
 
         Paradigm *paradigms;

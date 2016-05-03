@@ -66,9 +66,9 @@ bool Model::Save( const string& filename, ostream& out ) const
 	ofstream model( filename, ios::out | ios::trunc );
 
 	if( model.good() ) {
-		for( QHash<StringPair, uint>::const_iterator itr = countTagsPair.begin(); itr != countTagsPair.end(); ++itr) {
-			model << itr.key().first.toStdString() << " "
-				<< itr.key().second.toStdString() << " " << itr.value() << " ";
+		for( auto i = countTagsPair.cbegin(); i != countTagsPair.cend(); ++i ) {
+			model << i->first.first << " " << i->first.second
+				<< " " << i->second << " ";
 		}
 		model << "----------";
 	}
@@ -97,7 +97,7 @@ bool Model::Load( const string& filename, ostream& out )
 		model >> first >> second >> value;
 
 		if( model.good() ) {
-			countTagsPair.insert( StringPair( first.c_str(), second.c_str() ), value );
+			countTagsPair.insert( make_pair( make_pair( first, second ), value ) );
 		} else if( model.eof() && second.empty() && first == "----------" ) {
 			model.clear(); // reset state to good
 			break;
@@ -133,7 +133,7 @@ bool Model::Train( const string& filename, ostream& out )
 
         QStringList words = line.split(" ");
         ++countWords;
-        ++countTagsPair[StringPair(prevTag, words[2])];
+		++countTagsPair[StringPair(prevTag.toStdString(), words[2].toStdString())];
         prevTag = words[2];
     }
     return true;
@@ -161,7 +161,7 @@ double Model::Test( const string& filename, ostream& out )
         }
 
         QStringList words = line.split(" ");
-		curTag = Predict(prevTag.toStdString(), words[0].toStdString()).second;
+		curTag = Predict(prevTag.toStdString(), words[0].toStdString()).second.c_str();
         if (curTag != "PNKT" && curTag != "NUMB" && curTag != "LATN" && curTag != "UNKN") {
             if (words[2] == "UNKN")
                 continue;
@@ -177,15 +177,17 @@ double Model::Test( const string& filename, ostream& out )
     return true;
 }
 
-void Model::Print( ostream& out )
+void Model::Print( ostream& out ) const
 {
 	unordered_map<string, uint> count;
-	for( QHash<StringPair, uint>::const_iterator i = countTagsPair.begin(); i != countTagsPair.end(); ++i ) {
-		out << i.key().first.toStdString() << " before " << i.key().second.toStdString() << " : " << i.value() << endl;
-		count[i.key().first.toStdString()] += i.value();
+	for( auto i = countTagsPair.cbegin(); i != countTagsPair.cend(); ++i ) {
+		out << i->first.first << " before " << i->first.second
+			<< " : " << i->second << endl;
+
+		auto p = count.insert( make_pair( i->first.first, 0 ) );
+		p.first->second += i->second;
 	}
 
-	QHash<QString, uint>::const_iterator j;
 	for( auto i = count.cbegin(); i != count.cend(); ++i ) {
 		out << i->first << " " << i->second << endl;
 	}
@@ -216,30 +218,31 @@ QList<StringPair> Model::GetTags( const string& word, QList<uint> &probs )
     probs.clear();
     QChar yo = QString::fromUtf8("Ё")[0];
     QChar ye = QString::fromUtf8("Е")[0];
-	result = getNFandTags(QString(word.c_str()).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString());
-    if (result.size() > 0) {
+	//result = getNFandTags(QString(word.c_str()).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString());
+	result = getNFandTags( word );
+	if (result.size() > 0) {
         for (QList<StringPair>::iterator i = result.begin(); i != result.end(); ++i) {
             probs.append(1);
         }
         return result;
     }
 	if (QChar(word[0]).isPunct()) {
-		result.append(StringPair(word.c_str(), "PNCT"));
-        probs.append(1);
+		result.append( StringPair( word, "PNCT" ) );
+		probs.append( 1 );
 	} else if (QChar(word[0]).isNumber()) {
-		result.append(StringPair(word.c_str(), "NUMB"));
-        probs.append(1);
+		result.append( StringPair( word, "NUMB" ) );
+		probs.append( 1 );
 	} else if (QChar(word[0]).toLatin1() != 0) {
-		result.append(StringPair(word.c_str(), "LATN"));
-        probs.append(1);
+		result.append( StringPair( word, "LATN" ) );
+		probs.append( 1 );
     } else {
 		vector< pair<string, uint> > predictedTags = getTagsAndCount(QString(word.c_str()).toUpper().right(3).toStdString());
 		if( predictedTags.size() == 0 ) {
-			result.append( StringPair( word.c_str(), "UNKN" ) );
+			result.append( StringPair( word, "UNKN" ) );
 			probs.append( 1 );
         }
 		for( auto i = predictedTags.cbegin(); i != predictedTags.cend(); ++i ) {
-			result.append( StringPair( word.c_str(), i->first.c_str() ) );
+			result.append( StringPair( word, i->first ) );
 			probs.append( i->second );
         }
     }
@@ -248,14 +251,13 @@ QList<StringPair> Model::GetTags( const string& word, QList<uint> &probs )
 
 QList<StringPair> Model::getNFandTags( const string& key ) const
 {
-	QByteArray temp = QString( key.c_str() ).toUtf8();
-    string normalForm = temp.data();
+	string normalForm = key;
     string hkey = normalForm + " ";
     QList<StringPair> res;
     marisa::Agent agent;
     agent.set_query(hkey.c_str());
     while(words.predictive_search(agent)){
-        normalForm = temp.data();
+		normalForm = key;
         char *buf = new char[agent.key().length() + 1];
         char *b = new char[agent.key().length() + 1];
         int p;
@@ -275,7 +277,7 @@ QList<StringPair> Model::getNFandTags( const string& key ) const
         normalForm = prefix + normalForm;
         QString nf = QString::fromUtf8(normalForm.c_str());
         QString t = QString::fromUtf8(tags[paradigms[p].getTags(n)].c_str());
-        res.append(QPair<QString, QString>(nf, t));
+		res.append( make_pair( nf.toStdString(), t.toStdString() ) );
     }
     return res;
 }
