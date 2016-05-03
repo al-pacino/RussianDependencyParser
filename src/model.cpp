@@ -251,59 +251,54 @@ QList<StringPair> Model::GetTags( const string& word, QList<uint> &probs )
 
 QList<StringPair> Model::getNFandTags( const string& key ) const
 {
-	string normalForm = key;
-    string hkey = normalForm + " ";
-    QList<StringPair> res;
-    marisa::Agent agent;
-    agent.set_query(hkey.c_str());
-    while(words.predictive_search(agent)){
-		normalForm = key;
-        char *buf = new char[agent.key().length() + 1];
-        char *b = new char[agent.key().length() + 1];
-        int p;
-        int n;
-        strncpy(buf, agent.key().ptr(), agent.key().length());
-        buf[agent.key().length()] = '\0';
-        sscanf(buf, "%s %d %d", b, &p, &n);
-        delete [] b;
-        delete [] buf;
-        string suffix = suffixes[paradigms[p].getSuffix(n)];
-        normalForm = normalForm.substr(0, normalForm.size() - suffix.size());
-        suffix = suffixes[paradigms[p].getSuffix(0)];
-        normalForm += suffix;
-        string prefix = prefixes[paradigms[p].getPrefix(n)];
-        normalForm = normalForm.substr(prefix.size());
-        prefix = prefixes[paradigms[p].getPrefix(0)];
-        normalForm = prefix + normalForm;
-        QString nf = QString::fromUtf8(normalForm.c_str());
-        QString t = QString::fromUtf8(tags[paradigms[p].getTags(n)].c_str());
-		res.append( make_pair( nf.toStdString(), t.toStdString() ) );
-    }
-    return res;
+	QList<StringPair> res;
+	marisa::Agent agent;
+	agent.set_query( ( key + " " ).c_str() );
+
+	while( words.predictive_search( agent ) ) {
+		string normalForm = key;
+		char *buf = new char[agent.key().length() + 1];
+		char *b = new char[agent.key().length() + 1];
+		int p;
+		int n;
+		strncpy(buf, agent.key().ptr(), agent.key().length());
+		buf[agent.key().length()] = '\0';
+		sscanf(buf, "%s %d %d", b, &p, &n);
+		delete [] b;
+		delete [] buf;
+		string suffix = suffixes[paradigms[p].getSuffix(n)];
+		normalForm = normalForm.substr(0, normalForm.size() - suffix.size());
+		suffix = suffixes[paradigms[p].getSuffix(0)];
+		normalForm += suffix;
+		string prefix = prefixes[paradigms[p].getPrefix(n)];
+		normalForm = normalForm.substr(prefix.size());
+		prefix = prefixes[paradigms[p].getPrefix(0)];
+		normalForm = prefix + normalForm;
+		res.append( make_pair( normalForm, tags[paradigms[p].getTags(n)] ) );
+	}
+
+	return res;
 }
 
 vector< pair<string, uint> > Model::getTagsAndCount( const string& key ) const
 {
-	QByteArray temp = QString( key.c_str() ).toUtf8();
-    string hkey = temp.data();
-    hkey += " ";
 	vector< pair<string, uint> > res;
-    marisa::Agent agent;
-    agent.set_query(hkey.c_str());
-    while(words.predictive_search(agent)){
-        char *buf = new char[agent.key().length() + 1];
-        char *b = new char[agent.key().length() + 1];
-        int p;
-        uint n;
-        strncpy(buf, agent.key().ptr(), agent.key().length());
-        buf[agent.key().length()] = '\0';
-        sscanf(buf, "%s %d %u", b, &p, &n);
-        delete [] b;
-        delete [] buf;
-        QString t = QString::fromUtf8(tags[p].c_str());
-		res.push_back( make_pair( t.toStdString(), n ) );
-    }
-    return res;
+	marisa::Agent agent;
+	agent.set_query( ( key + " " ).c_str() );
+
+	while( words.predictive_search( agent ) ) {
+		char *buf = new char[agent.key().length() + 1];
+		char *b = new char[agent.key().length() + 1];
+		int p;
+		uint n;
+		strncpy(buf, agent.key().ptr(), agent.key().length());
+		buf[agent.key().length()] = '\0';
+		sscanf(buf, "%s %d %u", b, &p, &n);
+		delete [] b;
+		delete [] buf;
+		res.push_back( make_pair( tags[p], n ) );
+	}
+	return res;
 }
 
 Model::~Model()
