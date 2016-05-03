@@ -74,7 +74,7 @@ bool Model::Save( const string& filename, ostream& out ) const
 	}
 
 	if( !model.good() ) {
-		out << "error: cannot open or write model file '" << filename << "'" << endl;
+		out << "Error: Cannot open or write model file '" << filename << "'." << endl;
 		return false;
 	}
 	return true;
@@ -82,27 +82,33 @@ bool Model::Save( const string& filename, ostream& out ) const
 
 bool Model::Load( const string& filename, ostream& out )
 {
-	QFile fin( filename.c_str() );
-    if (!fin.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        out << "ERROR: model file not found" << endl;
-        return false;
-    }
-    QTextStream sfin(&fin);
-    sfin.setCodec("CP1251");
+	ifstream model( filename );
 
-    countTagsPair.clear();
-    QString tmp1, tmp2;
-    int tmp3;
-    while (true) {
-        sfin >> tmp1;
-        if (tmp1 == "----------") {
-            break;
-        }
-        sfin >> tmp2 >> tmp3;
-        countTagsPair.insert(StringPair(tmp1, tmp2), tmp3);
-    }
-    fin.close();
-    return true;
+	if( !model.good() ) {
+		out << "Error: Model file '" << filename << "' was not found." << endl;
+		return false;
+	}
+
+	countTagsPair.clear();
+	while( model.good() ) {
+		string first;
+		string second;
+		unsigned int value;
+		model >> first >> second >> value;
+
+		if( model.good() ) {
+			countTagsPair.insert( StringPair( first.c_str(), second.c_str() ), value );
+		} else if( model.eof() && first == "----------" ) {
+			model.clear(); // reset state to good
+			break;
+		}
+	}
+
+	if( !model.good() ) {
+		out << "Error: Model file '" << filename << "' is corrupted." << endl;
+		return false;
+	}
+	return true;
 }
 
 bool Model::Train( const string& filename, ostream& out )
