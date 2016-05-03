@@ -6,8 +6,6 @@
 
 // temporary includes
 #include <QString>
-#include <QFile>
-#include <QTextStream>
 
 // local includes
 #include <model.h>
@@ -125,6 +123,7 @@ bool Model::Train( const string& filename, ostream& out )
 	while( file.good() ) {
 		getline( file, line );
 		if( line.empty() || line == "----------" ) {
+			tagPair.first = "NONE";
 			continue;
 		}
 
@@ -151,40 +150,60 @@ bool Model::Train( const string& filename, ostream& out )
 
 double Model::Test( const string& filename, ostream& out )
 {
-	QFile fin( filename.c_str() );
+	ifstream file( filename );
 
-    if (!fin.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        out << "ERROR: input file not found" << endl;
-        return false;
-    }
+	if( !file.good() ) {
+		out << "Error: Input file '" << filename << "' was not found." << endl;
+		return false;
+	}
+	
+	uint countAll = 0;
+	uint countWrong = 0;
+	StringPair tagPair( "NONE", "" );
+	string zeroWord;
+	string secondWord;
+	string line;
+	while( file.good() ) {
+		getline( file, line );
+		if( line.empty() || line == "----------" ) {
+			tagPair.first = "NONE";
+			continue;
+		}
 
-    QString curTag, prevTag = "NONE";
-	uint countAll = 0, countWrong = 0;
+		istringstream lineStream( line );
+		lineStream >> zeroWord >> secondWord >> secondWord;
 
-    QTextStream sfin(&fin);
-    sfin.setCodec("UTF-8");
-    while (!sfin.atEnd()) {
-        QString line = sfin.readLine();
-        if (line == "----------") {
-            prevTag = "NONE";
-            continue;
-        }
+		if( lineStream.fail() ) {
+			file.setstate( ios::failbit );
+			break;
+		}
 
-        QStringList words = line.split(" ");
-		curTag = Predict(prevTag.toStdString(), words[0].toStdString()).second.c_str();
-        if (curTag != "PNKT" && curTag != "NUMB" && curTag != "LATN" && curTag != "UNKN") {
-            if (words[2] == "UNKN")
-                continue;
-            ++countAll;
-            if (words[2] != "UNKN" && words[2] != curTag) {
-				out << words[0].toStdString() << " : " << words[2].toStdString() << " != " << curTag.toStdString() << endl;
-                ++countWrong;
-            }
-        }
-        prevTag = curTag;
-    }
-    out << (countAll - countWrong) / (1. * countAll) << endl;
-    return true;
+		tagPair.second = Predict( tagPair.first, zeroWord ).second;
+		if( tagPair.second != "PNKT"
+			&& tagPair.second != "NUMB"
+			&& tagPair.second != "LATN"
+			&& tagPair.second != "UNKN")
+		{
+			if( secondWord == "UNKN" ) {
+				continue;
+			}
+			countAll++;
+			if( secondWord != tagPair.second ) {
+				out << zeroWord << " : " << secondWord
+					<< " != " << tagPair.second << endl;
+				countWrong++;
+			}
+		}
+		swap( tagPair.first, tagPair.second );
+	}
+
+	if( file.fail() ) {
+		out << "Error: Input file '" << filename << "' is corrupted." << endl;
+		return false;
+	}
+
+	out << static_cast<double>( countAll - countWrong ) / countAll << endl;
+	return true;
 }
 
 void Model::Print( ostream& out ) const
