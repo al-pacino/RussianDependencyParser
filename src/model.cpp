@@ -265,9 +265,17 @@ static string utf8replaceYoByYe( const string& text )
 	return QString::fromStdString( text ).replace( yo, ye ).toStdString();
 }
 
+// return count last utf8 symbols from the text
 static string utf8suffix( const string& text, size_t count )
 {
-	return QString::fromStdString( text ).right( count ).toStdString();
+	size_t offset = text.length();
+	while( offset > 0 && count > 0 ) {
+		offset--;
+		if( ( static_cast<unsigned char>( text[offset] ) & 0xC0 ) != 0x80 ) {
+			count--;
+		}
+	}
+	return text.substr( offset );
 }
 
 void Model::GetTags( const string& word,
