@@ -31,7 +31,7 @@ class Model {
         StringPair predict(const QString &prevTag, const QString &curWord);
         QList<StringPair> getTags(const QString &word, QList<ulong> &probs);
 		bool Save( const string& filename, ostream& out );
-        bool load(const QString &filename, QTextStream &out);
+		bool Load( const string& filename, ostream& out );
 
     private:
         QHash<StringPair, ulong> countTagsPair;

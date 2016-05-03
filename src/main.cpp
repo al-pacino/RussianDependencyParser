@@ -122,7 +122,7 @@ bool SaveMorph( const string& modelFilename,
 	QTextStream out( stderr );
 	out.setCodec( "UTF-8" );
 	Model m( ModelSubdirectoryName );
-	m.load( modelFilename.c_str(), out );
+	m.Load( modelFilename, cerr );
 	return printMorph( textFilename.c_str(), morphFilename.c_str(), m );
 }
 

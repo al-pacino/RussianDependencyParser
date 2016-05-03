@@ -82,9 +82,9 @@ bool Model::Save( const string& filename, ostream& out )
     return true;
 }
 
-bool
-Model::load(const QString& filename, QTextStream& out) {
-    QFile fin(filename);
+bool Model::Load( const string& filename, ostream& out )
+{
+	QFile fin( filename.c_str() );
     if (!fin.open(QIODevice::ReadOnly | QIODevice::Text)) {
         out << "ERROR: model file not found" << endl;
         return false;
