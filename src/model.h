@@ -44,7 +44,7 @@ class Model {
         marisa::Trie words;
         marisa::Trie ends;
 
-        QList<StringPair> getNFandTags(const QString& key) const;
+		QList<StringPair> getNFandTags( const string& key ) const;
         QVector<QPair<QString, uint> > getTagsAndCount(const QString& key) const;
 };
 

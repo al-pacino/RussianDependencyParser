@@ -214,7 +214,7 @@ QList<StringPair> Model::GetTags( const string& word, QList<ulong> &probs )
     probs.clear();
     QChar yo = QString::fromUtf8("Ё")[0];
     QChar ye = QString::fromUtf8("Е")[0];
-	result = getNFandTags(QString(word.c_str()).toUpper().replace(yo, ye, Qt::CaseInsensitive));
+	result = getNFandTags(QString(word.c_str()).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString());
     if (result.size() > 0) {
         for (QList<StringPair>::iterator i = result.begin(); i != result.end(); ++i) {
             probs.append(1);
@@ -244,9 +244,9 @@ QList<StringPair> Model::GetTags( const string& word, QList<ulong> &probs )
     return result;
 }
 
-QList<StringPair> Model::getNFandTags(const QString& key) const
+QList<StringPair> Model::getNFandTags( const string& key ) const
 {
-    QByteArray temp = key.toUtf8();
+	QByteArray temp = QString( key.c_str() ).toUtf8();
     string normalForm = temp.data();
     string hkey = normalForm + " ";
     QList<StringPair> res;
