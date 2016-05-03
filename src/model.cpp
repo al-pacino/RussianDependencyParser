@@ -98,7 +98,7 @@ bool Model::Load( const string& filename, ostream& out )
 
 		if( model.good() ) {
 			countTagsPair.insert( StringPair( first.c_str(), second.c_str() ), value );
-		} else if( model.eof() && first == "----------" ) {
+		} else if( model.eof() && second.empty() && first == "----------" ) {
 			model.clear(); // reset state to good
 			break;
 		}
