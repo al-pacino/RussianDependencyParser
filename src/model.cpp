@@ -225,13 +225,14 @@ QList<StringPair> Model::GetTags( const string& word, QList<uint> &probs )
         }
         return result;
     }
-	if (QChar(word[0]).isPunct()) {
+	QChar firstChar = QString::fromStdString( word )[0];
+	if (firstChar.isPunct()) {
 		result.append( StringPair( word, "PNCT" ) );
 		probs.append( 1 );
-	} else if (QChar(word[0]).isNumber()) {
+	} else if (firstChar.isNumber()) {
 		result.append( StringPair( word, "NUMB" ) );
 		probs.append( 1 );
-	} else if (QChar(word[0]).toLatin1() != 0) {
+	} else if (firstChar.toLatin1() != 0) {
 		result.append( StringPair( word, "LATN" ) );
 		probs.append( 1 );
     } else {
