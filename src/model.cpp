@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cassert>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 
 // temporary includes
@@ -112,30 +113,40 @@ bool Model::Load( const string& filename, ostream& out )
 
 bool Model::Train( const string& filename, ostream& out )
 {
-	QFile fin( filename.c_str() );
+	ifstream file( filename );
 
-    if (!fin.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        out << "ERROR: input file not found" << endl;
-        return false;
-    }
+	if( !file.good() ) {
+		out << "Error: Input file '" << filename << "' was not found." << endl;
+		return false;
+	}
 
-    QString prevTag = "NONE";
+	StringPair tagPair( "NONE", "" );
+	string line;
+	while( file.good() ) {
+		getline( file, line );
+		if( line.empty() || line == "----------" ) {
+			continue;
+		}
 
-    QTextStream sfin(&fin);
-    sfin.setCodec("UTF-8");
-    while (!sfin.atEnd()) {
-        QString line = sfin.readLine();
-        if (line == "----------") {
-            prevTag = "NONE";
-            continue;
-        }
+		istringstream lineStream( line );
+		lineStream >> tagPair.second >> tagPair.second >> tagPair.second;
 
-        QStringList words = line.split(" ");
-        ++countWords;
-		++countTagsPair[StringPair(prevTag.toStdString(), words[2].toStdString())];
-        prevTag = words[2];
-    }
-    return true;
+		if( lineStream.fail() ) {
+			file.setstate( ios::failbit );
+			break;
+		}
+
+		countWords++;
+		auto i = countTagsPair.insert( make_pair( tagPair, 0 ) );
+		i.first->second++;
+		swap( tagPair.first, tagPair.second );
+	}
+
+	if( file.fail() ) {
+		out << "Error: Input file '" << filename << "' is corrupted." << endl;
+		return false;
+	}
+	return true;
 }
 
 double Model::Test( const string& filename, ostream& out )
