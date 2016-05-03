@@ -12,8 +12,6 @@
 #include <fstream>
 #include <iostream>
 
-QTextStream err(stdout);
-
 Model::Model(const char *dictdir) 
 {
     countTagsPair.clear();
@@ -208,7 +206,6 @@ StringPair Model::Predict( const string& prevTag, const string& curWord )
 
 QList<StringPair> Model::GetTags( const string& word, QList<ulong> &probs )
 {
-    err.setCodec("UTF-8");
     QList<StringPair> result;
     result.clear();
     probs.clear();
