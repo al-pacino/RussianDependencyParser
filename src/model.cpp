@@ -1,16 +1,15 @@
-#include "model.h"
-#include <QString>
-#include <QTextCodec>
-#include <QByteArray>
-#include <QStringList>
-#include <QTextStream>
-#include <QFile>
-#include <QList>
-#include <QHash>
-#include <QDebug>
-#include <stdio.h>
+#include <cstdio>
+#include <cassert>
 #include <fstream>
 #include <iostream>
+
+// temporary includes
+#include <QString>
+#include <QFile>
+#include <QTextStream>
+
+// local includes
+#include <model.h>
 
 Model::Model(const char *dictdir) 
 {

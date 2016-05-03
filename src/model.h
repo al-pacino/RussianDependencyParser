@@ -1,7 +1,6 @@
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
-#include <cassert>
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -11,12 +10,6 @@
 // local includes
 #include <marisa.h>
 #include <paradigm.h>
-
-// temporary includes
-#include <QTextStream>
-#include <QHash>
-#include <QtGlobal>
-#include <QVector>
 
 using namespace std;
 
