@@ -231,14 +231,14 @@ QList<StringPair> Model::GetTags( const string& word, QList<ulong> &probs )
 		result.append(StringPair(word.c_str(), "LATN"));
         probs.append(1);
     } else {
-		QVector<QPair<QString, uint> > predictedTags = getTagsAndCount(QString(word.c_str()).toUpper().right(3));
-        if (predictedTags.size() == 0) {
-			result.append(StringPair(word.c_str(), "UNKN"));
-            probs.append(1);
+		vector< pair<string, uint> > predictedTags = getTagsAndCount(QString(word.c_str()).toUpper().right(3).toStdString());
+		if( predictedTags.size() == 0 ) {
+			result.append( StringPair( word.c_str(), "UNKN" ) );
+			probs.append( 1 );
         }
-        for (QVector<QPair<QString, uint> >::const_iterator itr = predictedTags.begin(); itr != predictedTags.end(); ++itr) {
-			result.append(StringPair(word.c_str(), (*itr).first));
-            probs.append((*itr).second);
+		for( auto i = predictedTags.cbegin(); i != predictedTags.cend(); ++i ) {
+			result.append( StringPair( word.c_str(), i->first.c_str() ) );
+			probs.append( i->second );
         }
     }
     return result;
@@ -278,12 +278,12 @@ QList<StringPair> Model::getNFandTags( const string& key ) const
     return res;
 }
 
-QVector<QPair<QString, uint> > Model::getTagsAndCount(const QString& key) const
+vector< pair<string, uint> > Model::getTagsAndCount( const string& key ) const
 {
-    QByteArray temp = key.toUtf8();
+	QByteArray temp = QString( key.c_str() ).toUtf8();
     string hkey = temp.data();
     hkey += " ";
-    QVector<QPair<QString, uint> > res;
+	vector< pair<string, uint> > res;
     marisa::Agent agent;
     agent.set_query(hkey.c_str());
     while(words.predictive_search(agent)){
@@ -297,7 +297,7 @@ QVector<QPair<QString, uint> > Model::getTagsAndCount(const QString& key) const
         delete [] b;
         delete [] buf;
         QString t = QString::fromUtf8(tags[p].c_str());
-        res.append(QPair<QString, uint>(t, n));
+		res.push_back( make_pair( t.toStdString(), n ) );
     }
     return res;
 }

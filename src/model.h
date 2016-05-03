@@ -2,6 +2,7 @@
 #define __MODEL_H__
 
 #include <string>
+#include <vector>
 #include <iostream>
 #include <unordered_map>
 
@@ -45,7 +46,7 @@ class Model {
         marisa::Trie ends;
 
 		QList<StringPair> getNFandTags( const string& key ) const;
-        QVector<QPair<QString, uint> > getTagsAndCount(const QString& key) const;
+		vector< pair<string, uint> > getTagsAndCount( const string& key ) const;
 };
 
 #endif
