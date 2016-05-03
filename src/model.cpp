@@ -157,7 +157,7 @@ double Model::Test( const string& filename, ostream& out )
         }
 
         QStringList words = line.split(" ");
-        curTag = predict(prevTag, words[0]).second;
+		curTag = Predict(prevTag.toStdString(), words[0].toStdString()).second;
         if (curTag != "PNKT" && curTag != "NUMB" && curTag != "LATN" && curTag != "UNKN") {
             if (words[2] == "UNKN")
                 continue;
@@ -188,10 +188,10 @@ void Model::Print( ostream& out )
     }
 }
 
-StringPair
-Model::predict(const QString& prevTag, const QString& curWord) {
+StringPair Model::Predict( const string& prevTag, const string& curWord )
+{
     QList<ulong> probs;
-    QList<StringPair> variants = getTags(curWord, probs);
+	QList<StringPair> variants = getTags(curWord.c_str(), probs);
     uint maxVariant = 0;
     if (variants[maxVariant].second == "PNKT" || variants[maxVariant].second == "NUMB" ||
             variants[maxVariant].second == "LATN" || variants[maxVariant].second == "UNKN") {
@@ -199,7 +199,7 @@ Model::predict(const QString& prevTag, const QString& curWord) {
     }
     Q_ASSERT(probs.size() == variants.size());
     for (int i = 0; i < variants.size(); ++i) {
-        if (probs[i] * countTagsPair[StringPair(prevTag, variants[i].second)] > probs[maxVariant] * countTagsPair[StringPair(prevTag, variants[maxVariant].second)]) {
+		if (probs[i] * countTagsPair[StringPair(prevTag.c_str(), variants[i].second)] > probs[maxVariant] * countTagsPair[StringPair(prevTag.c_str(), variants[maxVariant].second)]) {
             maxVariant = i;
         }
     }

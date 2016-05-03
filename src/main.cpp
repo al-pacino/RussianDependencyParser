@@ -62,7 +62,7 @@ bool printMorph( const QString& f1, const QString& f2, Model& m )
                     word.chop(1);
                 }
 
-                StringPair predicted = m.predict(prevTag, word);
+				StringPair predicted = m.Predict(prevTag.toStdString(), word.toStdString());
                 prevTag = predicted.second;
                 token = xmlReader.readNext();
                 if (xmlReader.name() != "rel") {
