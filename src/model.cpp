@@ -179,17 +179,16 @@ double Model::Test( const string& filename, ostream& out )
 
 void Model::Print( ostream& out )
 {
-	QHash<StringPair, uint>::const_iterator i;
-	QHash<QString, uint> count;
-    for (i = countTagsPair.begin(); i != countTagsPair.end(); ++i) {
+	unordered_map<string, uint> count;
+	for( QHash<StringPair, uint>::const_iterator i = countTagsPair.begin(); i != countTagsPair.end(); ++i ) {
 		out << i.key().first.toStdString() << " before " << i.key().second.toStdString() << " : " << i.value() << endl;
-        count[i.key().first] += i.value();
-    }
+		count[i.key().first.toStdString()] += i.value();
+	}
 
 	QHash<QString, uint>::const_iterator j;
-    for (j = count.begin(); j != count.end(); ++j) {
-		out << j.key().toStdString() << " " << j.value() << endl;
-    }
+	for( auto i = count.cbegin(); i != count.cend(); ++i ) {
+		out << i->first << " " << i->second << endl;
+	}
 }
 
 StringPair Model::Predict( const string& prevTag, const string& curWord )
