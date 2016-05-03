@@ -253,16 +253,45 @@ StringPair Model::Predict( const string& prevTag, const string& curWord )
 	return variants[bestIndex];
 }
 
+// return the text where all ascii and utf-8 russian letters are in uppercase
 static string utf8makeUppercase( const string& text )
 {
-	return QString::fromStdString( text ).toUpper().toStdString();
+	string result( text );
+	for( size_t pos = 0; pos < result.length(); pos++ ) {
+		unsigned char c = result[pos];
+		if( c < 128 ) {
+			result[pos] = ::toupper( result[pos] );
+		} else if( c == 0xD0 ) {
+			unsigned char nc = result[pos + 1];
+			if( nc >= 0xB0 && nc <= 0xBF ) {
+				result[pos + 1] = static_cast<char>( nc - 32 );
+			}
+		} else if( c == 0xD1 ) {
+			unsigned char nc = result[pos + 1];
+			if( nc >= 0x80 && nc <= 0x8F ) {
+				result[pos] = '\xD0';
+				result[pos + 1] = static_cast<char>( nc + 32 );
+			} else if( nc == 0x91 ) {
+				result[pos] = '\xD0';
+				result[pos + 1] = '\x81';
+			}
+		}
+	}
+	return result;
 }
 
-static string utf8replaceYoByYe( const string& text )
+// return the text where all utf-8 Yo (\xD0\x81) was replaced by utf-8 Ye (\xD0\x95)
+static string utf8replaceYoWithYe( const string& text )
 {
-	QChar yo = QString::fromUtf8("Ё")[0];
-	QChar ye = QString::fromUtf8("Е")[0];
-	return QString::fromStdString( text ).replace( yo, ye ).toStdString();
+	string result( text );
+	size_t d0pos = 0;
+	while( ( d0pos = result.find( '\xD0', d0pos ) ) != string::npos ) {
+		d0pos++;
+		if( result[d0pos] == '\x81' ) {
+			result[d0pos] = '\x95';
+		}
+	}
+	return result;
 }
 
 // return count last utf8 symbols from the text
@@ -285,7 +314,7 @@ void Model::GetTags( const string& word,
 	probs.clear();
 
 	const string uppercaseWord = utf8makeUppercase( word );
-	getNFandTags( utf8replaceYoByYe( uppercaseWord ), variants );
+	getNFandTags( utf8replaceYoWithYe( uppercaseWord ), variants );
 
 	if( variants.empty() ) {
 		QChar firstChar = QString::fromStdString( word )[0];
