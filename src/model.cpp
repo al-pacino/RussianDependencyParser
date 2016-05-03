@@ -254,7 +254,7 @@ StringPair Model::Predict( const string& prevTag, const string& curWord )
 }
 
 // return the text where all ascii and utf-8 russian letters are in uppercase
-static string utf8makeUppercase( const string& text )
+static string utf8toUppercase( const string& text )
 {
 	string result( text );
 	for( size_t pos = 0; pos < result.length(); pos++ ) {
@@ -313,7 +313,7 @@ void Model::GetTags( const string& word,
 	variants.clear();
 	probs.clear();
 
-	const string uppercaseWord = utf8makeUppercase( word );
+	const string uppercaseWord = utf8toUppercase( word );
 	getNFandTags( utf8replaceYoWithYe( uppercaseWord ), variants );
 
 	if( variants.empty() ) {
