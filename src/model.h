@@ -30,7 +30,7 @@ class Model {
         void print(QTextStream &out);
         StringPair predict(const QString &prevTag, const QString &curWord);
         QList<StringPair> getTags(const QString &word, QList<ulong> &probs);
-        bool save(const QString &filename, QTextStream &out);
+		bool Save( const string& filename, ostream& out );
         bool load(const QString &filename, QTextStream &out);
 
     private:

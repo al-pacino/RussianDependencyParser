@@ -135,7 +135,7 @@ bool MorphTrain( const char* argv[] )
 	out.setCodec( "UTF-8" );
 	Model m( ModelSubdirectoryName );
 	m.train( argv[0], out );
-	m.save( argv[1], out );
+	m.Save( argv[1], cerr );
 	return true;
 }
 

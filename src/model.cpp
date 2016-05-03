@@ -63,9 +63,9 @@ Model::Model(const char *dictdir)
     ifs.close();
 }
 
-bool
-Model::save(const QString& filename, QTextStream& out) {
-    QFile fout(filename);
+bool Model::Save( const string& filename, ostream& out )
+{
+	QFile fout( filename.c_str() );
     if (!fout.open(QIODevice::WriteOnly | QIODevice::Text)) {
         out << "ERROR: cannot open model file" << endl;
         return false;
