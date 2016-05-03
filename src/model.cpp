@@ -218,8 +218,7 @@ QList<StringPair> Model::GetTags( const string& word, QList<uint> &probs )
     probs.clear();
     QChar yo = QString::fromUtf8("Ё")[0];
     QChar ye = QString::fromUtf8("Е")[0];
-	//result = getNFandTags(QString(word.c_str()).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString());
-	result = getNFandTags( word );
+	result = getNFandTags(QString::fromStdString(word).toUpper().replace(yo, ye, Qt::CaseInsensitive).toStdString());
 	if (result.size() > 0) {
         for (QList<StringPair>::iterator i = result.begin(); i != result.end(); ++i) {
             probs.append(1);
@@ -253,7 +252,8 @@ QList<StringPair> Model::getNFandTags( const string& key ) const
 {
 	QList<StringPair> res;
 	marisa::Agent agent;
-	agent.set_query( ( key + " " ).c_str() );
+	const string agentQuery = key + " "; // because agent don't copy query
+	agent.set_query( agentQuery.data(), agentQuery.length() );
 
 	while( words.predictive_search( agent ) ) {
 		string normalForm = key;
@@ -284,7 +284,8 @@ vector< pair<string, uint> > Model::getTagsAndCount( const string& key ) const
 {
 	vector< pair<string, uint> > res;
 	marisa::Agent agent;
-	agent.set_query( ( key + " " ).c_str() );
+	const string agentQuery = key + " "; // because agent don't copy query
+	agent.set_query( agentQuery.data(), agentQuery.length() );
 
 	while( words.predictive_search( agent ) ) {
 		char *buf = new char[agent.key().length() + 1];
