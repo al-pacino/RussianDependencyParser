@@ -107,9 +107,9 @@ bool Model::Load( const string& filename, ostream& out )
     return true;
 }
 
-bool
-Model::train(const QString& filename, QTextStream& out) {
-    QFile fin(filename);
+bool Model::Train( const string& filename, ostream& out )
+{
+	QFile fin( filename.c_str() );
 
     if (!fin.open(QIODevice::ReadOnly | QIODevice::Text)) {
         out << "ERROR: input file not found" << endl;
@@ -120,7 +120,6 @@ Model::train(const QString& filename, QTextStream& out) {
 
     QTextStream sfin(&fin);
     sfin.setCodec("UTF-8");
-    out.setCodec("UTF-8");
     while (!sfin.atEnd()) {
         QString line = sfin.readLine();
         if (line == "----------") {

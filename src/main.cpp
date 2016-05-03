@@ -131,10 +131,8 @@ bool SaveMorph( const string& modelFilename,
 // argv: train.txt newMorphModel.txt
 bool MorphTrain( const char* argv[] )
 {
-	QTextStream out( stderr );
-	out.setCodec( "UTF-8" );
 	Model m( ModelSubdirectoryName );
-	m.train( argv[0], out );
+	m.Train( argv[0], cerr );
 	m.Save( argv[1], cerr );
 	return true;
 }
