@@ -57,6 +57,8 @@ bool Model::Initialize( const string& dictionaryDirectory, ostream& errorStream 
 			<< "/paradigms" << "' is corrupted." << endl;
 		return false;
 	}
+
+	return true;
 }
 
 bool Model::loadSimpleFile( const string& filename, StringVector& data )
