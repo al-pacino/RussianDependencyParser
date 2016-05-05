@@ -13,9 +13,13 @@
 
 using namespace std;
 
+//------------------------------------------------------------------------------
+
 typedef pair<string, string> StringPair;
 typedef unsigned char uchar;
 typedef unsigned int uint;
+
+//------------------------------------------------------------------------------
 
 class Model {
 public:
@@ -53,5 +57,31 @@ private:
 	void getTagsAndCount( const string& key,
 		vector<StringPair>& variants, vector<uint>& probs ) const;
 };
+
+//------------------------------------------------------------------------------
+
+namespace Utf8 {
+
+// return the text where all ascii and utf-8 russian letters are in uppercase
+string ToUppercase( const string& text );
+
+// return the text where all utf-8 Yo (\xD0\x81) was replaced by utf-8 Ye (\xD0\x95)
+string ReplaceYoWithYe( const string& text );
+
+// return count last utf8 symbols from the text
+string Suffix( const string& text, size_t count );
+
+// return true if word starts with punctuation mark
+bool StartswithPunctuationMark( const string& word );
+
+// return true if word starts with digit
+bool StartswithDigit( const string& word );
+
+// return true if word starts with latin letter
+bool StartswithLatinLetter( const string& word );
+
+} // end of Utf8 namespace
+
+//------------------------------------------------------------------------------
 
 #endif

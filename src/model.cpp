@@ -7,6 +7,8 @@
 // local includes
 #include <model.h>
 
+//------------------------------------------------------------------------------
+
 Model::Model(const char *dictdir) 
 {
     countTagsPair.clear();
@@ -254,98 +256,24 @@ StringPair Model::Predict( const string& prevTag, const string& curWord ) const
 	return variants[bestIndex];
 }
 
-// return the text where all ascii and utf-8 russian letters are in uppercase
-static string utf8toUppercase( const string& text )
-{
-	string result( text );
-	for( size_t pos = 0; pos < result.length(); pos++ ) {
-		unsigned char c = result[pos];
-		if( c < 128 ) {
-			result[pos] = ::toupper( result[pos] );
-		} else if( c == 0xD0 ) {
-			unsigned char nc = result[pos + 1];
-			if( nc >= 0xB0 && nc <= 0xBF ) {
-				result[pos + 1] = static_cast<char>( nc - 32 );
-			}
-		} else if( c == 0xD1 ) {
-			unsigned char nc = result[pos + 1];
-			if( nc >= 0x80 && nc <= 0x8F ) {
-				result[pos] = '\xD0';
-				result[pos + 1] = static_cast<char>( nc + 32 );
-			} else if( nc == 0x91 ) {
-				result[pos] = '\xD0';
-				result[pos + 1] = '\x81';
-			}
-		}
-	}
-	return result;
-}
-
-// return the text where all utf-8 Yo (\xD0\x81) was replaced by utf-8 Ye (\xD0\x95)
-static string utf8replaceYoWithYe( const string& text )
-{
-	string result( text );
-	size_t d0pos = 0;
-	while( ( d0pos = result.find( '\xD0', d0pos ) ) != string::npos ) {
-		d0pos++;
-		if( result[d0pos] == '\x81' ) {
-			result[d0pos] = '\x95';
-		}
-	}
-	return result;
-}
-
-// return count last utf8 symbols from the text
-static string utf8suffix( const string& text, size_t count )
-{
-	size_t offset = text.length();
-	while( offset > 0 && count > 0 ) {
-		offset--;
-		if( ( static_cast<unsigned char>( text[offset] ) & 0xC0 ) != 0x80 ) {
-			count--;
-		}
-	}
-	return text.substr( offset );
-}
-
-// return true if word starts with punctuation mark
-static bool utf8startswithPunctuationMark( const string& word )
-{
-	static const string puncts( "!\"'(),-.:;?[]" );
-	return ( puncts.find( word[0] ) != string::npos );
-}
-
-// return true if word starts with digit
-static bool utf8startswithDigit( const string& word )
-{
-	return ( word[0] >= '0' && word[0] <= '9' );
-}
-
-// return true if word starts with latin letter
-static bool utf8startswithLatinLetter( const string& word )
-{
-	return ( word[0] >= 'a' && word[0] <= 'z'
-		|| word[0] >= 'A' && word[0] <= 'Z' );
-}
-
 void Model::GetTags( const string& word,
 	vector<StringPair>& variants, vector<uint>& probs ) const
 {
 	variants.clear();
 	probs.clear();
 
-	const string uppercaseWord = utf8toUppercase( word );
-	getNFandTags( utf8replaceYoWithYe( uppercaseWord ), variants );
+	const string uppercaseWord = Utf8::ToUppercase( word );
+	getNFandTags( Utf8::ReplaceYoWithYe( uppercaseWord ), variants );
 
 	if( variants.empty() ) {
-		if( utf8startswithPunctuationMark( word ) ) {
+		if( Utf8::StartswithPunctuationMark( word ) ) {
 			variants.push_back( StringPair( word, "PNCT" ) );
-		} else if( utf8startswithDigit( word ) ) {
+		} else if( Utf8::StartswithDigit( word ) ) {
 			variants.push_back( StringPair( word, "NUMB" ) );
-		} else if( utf8startswithLatinLetter( word ) ) {
+		} else if( Utf8::StartswithLatinLetter( word ) ) {
 			variants.push_back( StringPair( word, "LATN" ) );
 		} else {
-			getTagsAndCount( utf8suffix( uppercaseWord, 3 ), variants, probs );
+			getTagsAndCount( Utf8::Suffix( uppercaseWord, 3 ), variants, probs );
 
 			for( auto i = variants.begin(); i != variants.end(); ++i ) {
 				i->first = word;
@@ -429,3 +357,83 @@ Model::~Model()
     delete [] prefixes;
     delete [] suffixes;
 }
+
+//------------------------------------------------------------------------------
+
+namespace Utf8 {
+
+// return the text where all ascii and utf-8 russian letters are in uppercase
+string ToUppercase( const string& text )
+{
+	string result( text );
+	for( size_t pos = 0; pos < result.length(); pos++ ) {
+		unsigned char c = result[pos];
+		if( c < 128 ) {
+			result[pos] = ::toupper( result[pos] );
+		} else if( c == 0xD0 ) {
+			unsigned char nc = result[pos + 1];
+			if( nc >= 0xB0 && nc <= 0xBF ) {
+				result[pos + 1] = static_cast<char>( nc - 32 );
+			}
+		} else if( c == 0xD1 ) {
+			unsigned char nc = result[pos + 1];
+			if( nc >= 0x80 && nc <= 0x8F ) {
+				result[pos] = '\xD0';
+				result[pos + 1] = static_cast<char>( nc + 32 );
+			} else if( nc == 0x91 ) {
+				result[pos] = '\xD0';
+				result[pos + 1] = '\x81';
+			}
+		}
+	}
+	return result;
+}
+
+// return the text where all utf-8 Yo (\xD0\x81) was replaced by utf-8 Ye (\xD0\x95)
+string ReplaceYoWithYe( const string& text )
+{
+	string result( text );
+	size_t d0pos = 0;
+	while( ( d0pos = result.find( '\xD0', d0pos ) ) != string::npos ) {
+		d0pos++;
+		if( result[d0pos] == '\x81' ) {
+			result[d0pos] = '\x95';
+		}
+	}
+	return result;
+}
+
+// return count last utf8 symbols from the text
+string Suffix( const string& text, size_t count )
+{
+	size_t offset = text.length();
+	while( offset > 0 && count > 0 ) {
+		offset--;
+		if( ( static_cast<unsigned char>( text[offset] ) & 0xC0 ) != 0x80 ) {
+			count--;
+		}
+	}
+	return text.substr( offset );
+}
+
+// return true if word starts with punctuation mark
+bool StartswithPunctuationMark( const string& word )
+{
+	static const string puncts( "!\"'(),-.:;?[]" );
+	return ( puncts.find( word[0] ) != string::npos );
+}
+
+// return true if word starts with digit
+bool StartswithDigit( const string& word )
+{
+	return ( word[0] >= '0' && word[0] <= '9' );
+}
+
+// return true if word starts with latin letter
+bool StartswithLatinLetter( const string& word )
+{
+	return ( word[0] >= 'a' && word[0] <= 'z'
+		|| word[0] >= 'A' && word[0] <= 'Z' );
+}
+
+} // end of Utf8 namespace
