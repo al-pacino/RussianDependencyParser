@@ -290,6 +290,15 @@ void Model::GetTags( const string& word,
 	}
 }
 
+static void parseAgentKey( const marisa::Agent& agent, int& p, int& n )
+{
+	string key( agent.key().ptr(), agent.key().ptr() + agent.key().length() );
+	istringstream iss( key );
+	string ignored;
+	iss >> ignored >> p >> n;
+	assert( !iss.fail() );
+}
+
 void Model::getNFandTags( const string& key, vector<StringPair>& variants ) const
 {
 	variants.clear();
@@ -300,15 +309,8 @@ void Model::getNFandTags( const string& key, vector<StringPair>& variants ) cons
 
 	while( words.predictive_search( agent ) ) {
 		string normalForm = key;
-		char *buf = new char[agent.key().length() + 1];
-		char *b = new char[agent.key().length() + 1];
-		int p;
-		int n;
-		strncpy(buf, agent.key().ptr(), agent.key().length());
-		buf[agent.key().length()] = '\0';
-		sscanf(buf, "%s %d %d", b, &p, &n);
-		delete [] b;
-		delete [] buf;
+		int p, n;
+		parseAgentKey( agent, p, n );
 		string suffix = suffixes[paradigms[p].getSuffix(n)];
 		normalForm = normalForm.substr(0, normalForm.size() - suffix.size());
 		suffix = suffixes[paradigms[p].getSuffix(0)];
@@ -333,15 +335,8 @@ void Model::getTagsAndCount( const string& key,
 	agent.set_query( agentQuery.data(), agentQuery.length() );
 
 	while( words.predictive_search( agent ) ) {
-		char *buf = new char[agent.key().length() + 1];
-		char *b = new char[agent.key().length() + 1];
-		int p;
-		uint n;
-		strncpy(buf, agent.key().ptr(), agent.key().length());
-		buf[agent.key().length()] = '\0';
-		sscanf(buf, "%s %d %u", b, &p, &n);
-		delete [] b;
-		delete [] buf;
+		int p, n;
+		parseAgentKey( agent, p, n );
 		variants.push_back( StringPair( "", tags[p] ) );
 		probs.push_back( n );
 	}
