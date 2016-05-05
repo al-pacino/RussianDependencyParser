@@ -6,122 +6,136 @@
 
 // local includes
 #include <model.h>
-
-// temporary includes
-#include <QDir>
-#include <QTextStream>
-#include <QFile>
-#include <QXmlStreamReader>
+#include <tinyxml2.h>
 
 using namespace std;
-
-bool printMorph( const QString& f1, const QString& f2, Model& m )
-{
-    QFile xmlInput(f1);
-    QFile outFile(f2);
-    int j = 1;
-    int s = 0;
-    bool fSnt = true;
-
-    if (!xmlInput.open(QIODevice::ReadOnly | QIODevice::Text)) {
-		cerr << "Can't open input file" << endl;
-        return false;
-    }
-    if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		cerr << "Can't open output file" << endl;
-        return false;
-    }
-    QTextStream outF(&outFile);
-    outF.setCodec("UTF-8");
-    QXmlStreamReader xmlReader(&xmlInput);
-    QXmlStreamReader::TokenType token;
-    QString prevTag = "NONE";
-    QString id;
-    while (!xmlReader.atEnd() && !xmlReader.hasError()) {
-        token = xmlReader.readNext();
-        if (token == QXmlStreamReader::StartDocument) {
-            continue;
-        }
-        if (token == QXmlStreamReader::StartElement) {
-            if (xmlReader.name() == "se") {
-                j = 1;
-                ++s;
-                if (!fSnt) {
-                    outF << endl;
-                } else {
-                    fSnt = false;
-                }
-                prevTag = "NONE";
-                id = "0";
-            }
-            if (xmlReader.name() == "w") {
-                id = xmlReader.attributes().value("id").toString();
-                token = xmlReader.readNext();
-                QString word = xmlReader.text().toString();
-                if (!word[0].isPunct() && word[word.size() - 1].isPunct()) {
-                    word.chop(1);
-                }
-
-				StringPair predicted = m.Predict(prevTag.toStdString(), word.toStdString());
-				prevTag = predicted.second.c_str();
-                token = xmlReader.readNext();
-                if (xmlReader.name() != "rel") {
-                    return false;
-                }
-                QString idHead = xmlReader.attributes().value("id_head").toString();
-                QString type = xmlReader.attributes().value("type").toString();
-
-                QStringList lineParts;
-				lineParts = QString( predicted.second.c_str() ).split(",");
-                QString Pos = lineParts[0];
-                QString tags = "";
-                for (int i = 1; i < lineParts.size(); ++i) {
-                    tags += lineParts[i];
-                    tags += "|";
-                }
-                if (tags.size() == 0) {
-                    tags = "_";
-                } else {
-                    tags.chop(1);
-                }
-                if (idHead.size() == 0) idHead = "0";
-                if (type.size() == 0) type = "punct";
-                outF << id << "\t"
-                        << word << "\t"
-						<< QString::fromUtf8( predicted.first.c_str() ) << "\t"
-                        << Pos << "\t"
-                        << Pos << "\t"
-                        << tags << "\t"
-                        << idHead << "\t"
-                        << type << "\t" << "_" << "\t" << "_" << endl;
-                ++j;
-            }
-        }
-
-    }
-    outFile.close();
-    return true;
-}
-
-//------------------------------------------------------------------------------
-
-// If filePath already is an absolute path just return it
-string AbsoluteFilePath( const string& filePath )
-{
-	return QDir::current().absoluteFilePath( filePath.c_str() ).toStdString();
-}
 
 //------------------------------------------------------------------------------
 
 const char* const TemporaryMorphFilename = "temporary_morph_file";
 const char* const ModelSubdirectoryName = "dict";
 
+//------------------------------------------------------------------------------
+
+void SplitTags( const string& tags, string& firstTag, string& restTags )
+{
+	size_t pos = tags.find( ',' );
+	if( pos == string::npos ) {
+		firstTag = tags;
+		restTags.clear();
+	} else {
+		firstTag = tags.substr( 0, pos );
+		restTags = tags.substr( pos + 1 );
+		// replace all , with | in restTags
+		pos = 0;
+		while( ( pos = restTags.find( ',', pos ) ) != string::npos ) {
+			restTags[pos] = '|';
+		}
+	}
+	if( restTags.empty() ) {
+		restTags = "_";
+	}
+	assert( !firstTag.empty() );
+}
+
+bool WriteSentence( const tinyxml2::XMLElement* seElem,
+	ostream& out, /* const */ Model& model )
+{
+	using namespace tinyxml2;
+
+	assert( seElem != nullptr );
+	assert( string( seElem->Name() ) == "se" );
+
+	string prevTag = "NONE";
+	for( const tinyxml2::XMLElement* wElem = seElem->FirstChildElement();
+		wElem != nullptr; wElem = wElem->NextSiblingElement() )
+	{
+		if( string( wElem->Name() ) != "w" ) {
+			continue;
+		}
+		const tinyxml2::XMLElement* relElem = wElem->FirstChildElement();
+		if( relElem == nullptr || string( relElem->Name() ) != "rel" ) {
+			return false;
+		}
+
+		unsigned int id;
+		if( wElem->QueryUnsignedAttribute( "id", &id ) != XML_NO_ERROR ) {
+			return false;
+		}
+
+		string word( wElem->GetText() == nullptr ? "_" : wElem->GetText() );
+		/* if (!word[0].isPunct() && word[word.size() - 1].isPunct()) {
+			word.chop(1);
+		} */
+
+		const char* idHead = relElem->Attribute( "id_head" );
+		if( idHead == nullptr || *idHead == '\0' ) {
+			idHead = "0";
+		}
+		const char* type = relElem->Attribute( "type" );
+		if( type == nullptr || *type == '\0' ) {
+			type = "punct";
+		}
+
+		StringPair predicted = model.Predict( prevTag, word );
+		prevTag = predicted.second;
+
+		string firstTag;
+		string restTags;
+		SplitTags( predicted.second, firstTag, restTags );
+
+		out << id << "\t" << word << "\t" << predicted.first << "\t"
+			<< firstTag << "\t" << firstTag << "\t" << restTags
+			<< "\t" << idHead << "\t" << type << "\t_\t_" << endl;
+	}
+	out << endl;
+}
+
+bool WriteMorph( const string& xmlFilename,
+	const string& outputFilename, /* const */ Model& model )
+{
+	using namespace tinyxml2;
+
+	ofstream out( outputFilename, ios::out | ios::trunc );
+
+	XMLDocument doc;
+	if( doc.LoadFile( xmlFilename.c_str() ) != XML_NO_ERROR ) {
+		return false;
+	}
+
+	const tinyxml2::XMLElement* sentencesElem = doc.RootElement();
+	if( string( sentencesElem->Name() ) != "sentences" ) {
+		return false;
+	}
+
+	for( const tinyxml2::XMLElement* pElem = sentencesElem->FirstChildElement();
+		pElem != nullptr; pElem = pElem->NextSiblingElement() )
+	{
+		if( string( pElem->Name() ) != "p" ) {
+			return false;
+		}
+
+		for( const tinyxml2::XMLElement* seElem = pElem->FirstChildElement();
+			seElem != nullptr; seElem = seElem->NextSiblingElement() )
+		{
+			if( string( seElem->Name() ) != "se" ) {
+				return false;
+			}
+
+			if( !WriteSentence( seElem, out, model ) ) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 bool SaveMorph( const string& modelFilename,
 	const string& textFilename, const string& morphFilename )
 {
 	Model model( ModelSubdirectoryName );
 	model.Load( modelFilename, cerr );
-	return printMorph( textFilename.c_str(), morphFilename.c_str(), model );
+	return WriteMorph( textFilename, morphFilename, model );
 }
 
 //------------------------------------------------------------------------------
@@ -156,8 +170,8 @@ bool SyntTrain( const char* argv[] )
 	arguments
 		<< '"' << argv[4] << '"' // path to turbo parser
 		<< " --train"
-		<< " --file_test=\"" << AbsoluteFilePath( TemporaryMorphFilename ) << '"'
-		<< " --file_model=\"" << AbsoluteFilePath( argv[2] ) << '"';
+		<< " --file_test=\"" << TemporaryMorphFilename << '"'
+		<< " --file_model=\"" << argv[2] << '"';
 
 	// run turboparser
 	cout << "Running '" << argv[4] <<"'" << endl;
@@ -183,9 +197,9 @@ bool SyntMark( const char* argv[] )
 		<< '"' << argv[4] << '"' // path to turbo parser
 		<< " --test"
 		<< " --evaluate"
-		<< " --file_test=\"" << AbsoluteFilePath( TemporaryMorphFilename ) << '"'
-		<< " --file_model=\"" << AbsoluteFilePath( argv[2] ) << '"'
-		<< " --file_prediction=\"" + AbsoluteFilePath( argv[3] ) << '"';
+		<< " --file_test=\"" << TemporaryMorphFilename << '"'
+		<< " --file_model=\"" << argv[2] << '"'
+		<< " --file_prediction=\"" << argv[3] << '"';
 
 	// run turboparser
 	cout << "Running '" << argv[4] <<"'" << endl;
