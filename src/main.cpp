@@ -192,10 +192,10 @@ bool SyntTrain( const char* argv[] )
 
 	ostringstream arguments;
 	arguments
-		<< '"' << argv[3] << '"' // path to turbo parser
+		<< '"' << '"' << argv[3] << '"' // path to turbo parser
 		<< " --train"
-		<< " --file_test=\"" << TemporaryMorphFilename << '"'
-		<< " --file_model=\"" << argv[2] << '"';
+		<< " --file_train=\"" << TemporaryMorphFilename << '"'
+		<< " --file_model=\"" << argv[2] << '"' << '"';
 
 	// run turboparser
 	cout << "Running '" << argv[3] <<"'" << endl;
@@ -218,12 +218,12 @@ bool SyntMark( const char* argv[] )
 
 	ostringstream arguments;
 	arguments
-		<< '"' << argv[4] << '"' // path to turbo parser
+		<< '"' << '"' << argv[4] << '"' // path to turbo parser
 		<< " --test"
 		<< " --evaluate"
 		<< " --file_test=\"" << TemporaryMorphFilename << '"'
 		<< " --file_model=\"" << argv[2] << '"'
-		<< " --file_prediction=\"" << argv[3] << '"';
+		<< " --file_prediction=\"" << argv[3] << '"' << '"';
 
 	// run turboparser
 	cout << "Running '" << argv[4] <<"'" << endl;
