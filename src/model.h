@@ -22,12 +22,12 @@ public:
 	Model(const char *dictdir);
 	virtual ~Model();
 
-	bool Save( const string& filename, ostream& out ) const;
 	bool Load( const string& filename, ostream& out );
+	bool Save( const string& filename, ostream& out ) const;
 	bool Train( const string& filename, ostream& out );
-	double Test( const string& filename, ostream& out );
+	double Test( const string& filename, ostream& out ) const;
 	void Print( ostream& out ) const;
-	StringPair Predict( const string& prevTag, const string& curWord );
+	StringPair Predict( const string& prevTag, const string& curWord ) const;
 	void GetTags( const string& word,
 		vector<StringPair>& variants, vector<uint>& probs ) const;
 

@@ -56,25 +56,6 @@ Model::Model(const char *dictdir)
     ifs.close();
 }
 
-bool Model::Save( const string& filename, ostream& out ) const
-{
-	ofstream model( filename, ios::out | ios::trunc );
-
-	if( model.good() ) {
-		for( auto i = countTagsPair.cbegin(); i != countTagsPair.cend(); ++i ) {
-			model << i->first.first << " " << i->first.second
-				<< " " << i->second << " ";
-		}
-		model << "----------";
-	}
-
-	if( !model.good() ) {
-		out << "Error: Cannot open or write model file '" << filename << "'." << endl;
-		return false;
-	}
-	return true;
-}
-
 bool Model::Load( const string& filename, ostream& out )
 {
 	ifstream model( filename );
@@ -101,6 +82,25 @@ bool Model::Load( const string& filename, ostream& out )
 
 	if( !model.good() ) {
 		out << "Error: Model file '" << filename << "' is corrupted." << endl;
+		return false;
+	}
+	return true;
+}
+
+bool Model::Save( const string& filename, ostream& out ) const
+{
+	ofstream model( filename, ios::out | ios::trunc );
+
+	if( model.good() ) {
+		for( auto i = countTagsPair.cbegin(); i != countTagsPair.cend(); ++i ) {
+			model << i->first.first << " " << i->first.second
+				<< " " << i->second << " ";
+		}
+		model << "----------";
+	}
+
+	if( !model.good() ) {
+		out << "Error: Cannot open or write model file '" << filename << "'." << endl;
 		return false;
 	}
 	return true;
@@ -145,7 +145,7 @@ bool Model::Train( const string& filename, ostream& out )
 	return true;
 }
 
-double Model::Test( const string& filename, ostream& out )
+double Model::Test( const string& filename, ostream& out ) const
 {
 	ifstream file( filename );
 
@@ -219,7 +219,7 @@ void Model::Print( ostream& out ) const
 	}
 }
 
-StringPair Model::Predict( const string& prevTag, const string& curWord )
+StringPair Model::Predict( const string& prevTag, const string& curWord ) const
 {
 	vector<uint> probs;
 	vector<StringPair> variants;
@@ -240,7 +240,11 @@ StringPair Model::Predict( const string& prevTag, const string& curWord )
 	StringPair tmp( prevTag, "" );
 	for( size_t i = 0; i < variants.size(); i++ ) {
 		tmp.second = variants[i].second;
-		const uint current = probs[i] * countTagsPair[tmp];
+		auto p = countTagsPair.find( tmp );
+		if( p == countTagsPair.cend() ) {
+			continue;
+		}
+		const uint current = probs[i] * p->second;
 		if( best < current ) {
 			best = current;
 			bestIndex = i;
