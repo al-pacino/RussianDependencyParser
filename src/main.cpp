@@ -183,6 +183,25 @@ bool MorphMark( const char* argv[] )
 
 //------------------------------------------------------------------------------
 
+bool System( const string& arg )
+{
+	if( system( nullptr ) == 0 ) {
+		cerr << "Error: Function 'int system( const char* )'"
+			<< " is not supported." << endl;
+		return false;
+	}
+
+#ifdef _WIN32
+	const int returnCode = system( ( "\"" + arg + "\"" ).c_str() );
+#else
+	const int returnCode = system( arg.c_str() );
+#endif
+
+	return ( returnCode == 0 );
+}
+
+//------------------------------------------------------------------------------
+
 // argv: input.txt MorphModel.txt SyntModel.txt TURBO_PARSER
 bool SyntTrain( const char* argv[] )
 {
@@ -192,19 +211,19 @@ bool SyntTrain( const char* argv[] )
 
 	ostringstream arguments;
 	arguments
-		<< '"' << '"' << argv[3] << '"' // path to turbo parser
+		<< '"' << argv[3] << '"' // path to turbo parser
 		<< " --train"
 		<< " --file_train=\"" << TemporaryMorphFilename << '"'
-		<< " --file_model=\"" << argv[2] << '"' << '"';
+		<< " --file_model=\"" << argv[2] << '"';
 
 	// run turboparser
 	cout << "Running '" << argv[3] <<"'" << endl;
-	system( arguments.str().c_str() );
+	bool success = System( arguments.str() );
 
 	// delete TemporaryMorphFilename
 	remove( TemporaryMorphFilename );
 
-	return true;
+	return success;
 }
 
 //------------------------------------------------------------------------------
@@ -218,21 +237,21 @@ bool SyntMark( const char* argv[] )
 
 	ostringstream arguments;
 	arguments
-		<< '"' << '"' << argv[4] << '"' // path to turbo parser
+		<< '"' << argv[4] << '"' // path to turbo parser
 		<< " --test"
 		<< " --evaluate"
 		<< " --file_test=\"" << TemporaryMorphFilename << '"'
 		<< " --file_model=\"" << argv[2] << '"'
-		<< " --file_prediction=\"" << argv[3] << '"' << '"';
+		<< " --file_prediction=\"" << argv[3] << '"';
 
 	// run turboparser
 	cout << "Running '" << argv[4] <<"'" << endl;
-	system( arguments.str().c_str() );
+	bool success = System( arguments.str() );
 
 	// delete TemporaryMorphFilename
 	remove( TemporaryMorphFilename );
 
-	return true;
+	return success;
 }
 
 //------------------------------------------------------------------------------
