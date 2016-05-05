@@ -72,13 +72,16 @@ string ReplaceYoWithYe( const string& text );
 string Suffix( const string& text, size_t count );
 
 // return true if word starts with punctuation mark
-bool StartswithPunctuationMark( const string& word );
+bool StartsWithPunctuationMark( const string& word );
+
+// return true if word ends with punctuation mark
+bool EndsWithPunctuationMark( const string& word );
 
 // return true if word starts with digit
-bool StartswithDigit( const string& word );
+bool StartsWithDigit( const string& word );
 
 // return true if word starts with latin letter
-bool StartswithLatinLetter( const string& word );
+bool StartsWithLatinLetter( const string& word );
 
 } // end of Utf8 namespace
 

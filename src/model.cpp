@@ -266,11 +266,11 @@ void Model::GetTags( const string& word,
 	getNFandTags( Utf8::ReplaceYoWithYe( uppercaseWord ), variants );
 
 	if( variants.empty() ) {
-		if( Utf8::StartswithPunctuationMark( word ) ) {
+		if( Utf8::StartsWithPunctuationMark( word ) ) {
 			variants.push_back( StringPair( word, "PNCT" ) );
-		} else if( Utf8::StartswithDigit( word ) ) {
+		} else if( Utf8::StartsWithDigit( word ) ) {
 			variants.push_back( StringPair( word, "NUMB" ) );
-		} else if( Utf8::StartswithLatinLetter( word ) ) {
+		} else if( Utf8::StartsWithLatinLetter( word ) ) {
 			variants.push_back( StringPair( word, "LATN" ) );
 		} else {
 			getTagsAndCount( Utf8::Suffix( uppercaseWord, 3 ), variants, probs );
@@ -417,23 +417,31 @@ string Suffix( const string& text, size_t count )
 }
 
 // return true if word starts with punctuation mark
-bool StartswithPunctuationMark( const string& word )
+bool StartsWithPunctuationMark( const string& word )
 {
 	static const string puncts( "!\"'(),-.:;?[]" );
-	return ( puncts.find( word[0] ) != string::npos );
+	return ( !word.empty() && puncts.find( word.front() ) != string::npos );
+}
+
+// return true if word ends with punctuation mark
+bool EndsWithPunctuationMark( const string& word )
+{
+	static const string puncts( "!\"'(),-.:;?[]" );
+	return ( !word.empty() && puncts.find( word.back() ) != string::npos );
 }
 
 // return true if word starts with digit
-bool StartswithDigit( const string& word )
+bool StartsWithDigit( const string& word )
 {
-	return ( word[0] >= '0' && word[0] <= '9' );
+	return ( !word.empty() && word[0] >= '0' && word[0] <= '9' );
 }
 
 // return true if word starts with latin letter
-bool StartswithLatinLetter( const string& word )
+bool StartsWithLatinLetter( const string& word )
 {
-	return ( word[0] >= 'a' && word[0] <= 'z'
-		|| word[0] >= 'A' && word[0] <= 'Z' );
+	return ( !word.empty()
+		&& ( word[0] >= 'a' && word[0] <= 'z'
+			|| word[0] >= 'A' && word[0] <= 'Z' ) );
 }
 
 } // end of Utf8 namespace
