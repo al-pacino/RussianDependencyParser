@@ -261,7 +261,7 @@ void PrintUsage( const char* programName = 0 )
 
 bool TryRun( int argc, const char* argv[] )
 {
-	bool success = false;
+	int startupMode = -1;
 	if( argc >= 2 ) {
 		const string firstArgument( argv[1] );
 
@@ -269,22 +269,30 @@ bool TryRun( int argc, const char* argv[] )
 		argc -= 2;
 		argv += 2;
 
-		int i = 0;
-		while( StartupModes[i].FirstArgument != nullptr ) {
+		for( int i = 0; StartupModes[i].FirstArgument != nullptr; i++ ) {
 			if( firstArgument == StartupModes[i].FirstArgument ) {
 				if( argc == StartupModes[i].NumberOfArguments ) {
-					success = StartupModes[i].StartupFunction( argv );
+					startupMode = i;
 				}
 				break;
 			}
-			i++;
 		}
 	}
 
-	if( !success ) {
-		PrintUsage();
+	if( startupMode != -1 ) {
+		bool success = StartupModes[startupMode].StartupFunction( argv );
+
+		if( success ) {
+			cout << endl << "Done!" << endl;
+		} else {
+			cerr << endl << "Failed!" << endl;
+		}
+
+		return success;
 	}
-	return success;
+
+	PrintUsage();
+	return false;
 }
 
 //------------------------------------------------------------------------------
