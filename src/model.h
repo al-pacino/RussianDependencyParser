@@ -29,7 +29,7 @@ public:
 
 	void Reset();
 	bool Initialize( const string& dictionaryDirectory, ostream& errorStream );
-	bool IsInitialzied() const { return isInitialized; }
+	bool IsInitialized() const { return isInitialized; }
 
 	bool Load( const string& filename, ostream& out );
 	bool Save( const string& filename, ostream& out ) const;
