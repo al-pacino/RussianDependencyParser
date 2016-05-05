@@ -16,6 +16,7 @@ using namespace std;
 //------------------------------------------------------------------------------
 
 typedef pair<string, string> StringPair;
+typedef vector<string> StringVector;
 typedef unsigned char uchar;
 typedef unsigned int uint;
 
@@ -23,8 +24,12 @@ typedef unsigned int uint;
 
 class Model {
 public:
-	Model(const char *dictdir);
-	virtual ~Model();
+	Model() { Reset(); }
+	virtual ~Model() {}
+
+	void Reset();
+	bool Initialize( const string& dictionaryDirectory, ostream& errorStream );
+	bool IsInitialzied() const { return isInitialized; }
 
 	bool Load( const string& filename, ostream& out );
 	bool Save( const string& filename, ostream& out ) const;
@@ -36,6 +41,11 @@ public:
 		vector<StringPair>& variants, vector<uint>& probs ) const;
 
 private:
+	Model( const Model& );
+	Model& operator=( const Model& );
+
+	bool isInitialized;
+
 	struct pair_hash {
 		size_t operator () ( const pair<string, string>& p ) const
 		{
@@ -46,16 +56,18 @@ private:
 	unordered_map<StringPair, uint, pair_hash> countTagsPair;
 	uint countWords;
 
-	Paradigm *paradigms;
-	string *prefixes;
-	string *suffixes;
-	string *tags;
+	vector<Paradigm> paradigms;
+	StringVector prefixes;
+	StringVector suffixes;
+	StringVector tags;
 	marisa::Trie words;
 	marisa::Trie ends;
 
 	void getNFandTags( const string& key, vector<StringPair>& variants ) const;
 	void getTagsAndCount( const string& key,
 		vector<StringPair>& variants, vector<uint>& probs ) const;
+	bool loadSimpleFile( const string& filename, StringVector& data );
+	bool loadParadigms( const string& filename );
 };
 
 //------------------------------------------------------------------------------

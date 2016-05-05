@@ -136,8 +136,13 @@ bool WriteMorph( const string& xmlFilename,
 bool SaveMorph( const string& modelFilename,
 	const string& textFilename, const string& morphFilename )
 {
-	Model model( ModelSubdirectoryName );
-	model.Load( modelFilename, cerr );
+	Model model;
+	if( !model.Initialize( ModelSubdirectoryName, cerr ) ) {
+		return false;
+	}
+	if( !model.Load( modelFilename, cerr ) ) {
+		return false;
+	}
 
 	ofstream morphStream( morphFilename, ios::out | ios::trunc );
 	if( morphStream.good()
@@ -162,10 +167,10 @@ bool SaveMorph( const string& modelFilename,
 // argv: train.txt newMorphModel.txt
 bool MorphTrain( const char* argv[] )
 {
-	Model m( ModelSubdirectoryName );
-	m.Train( argv[0], cerr );
-	m.Save( argv[1], cerr );
-	return true;
+	Model model;
+	return ( model.Initialize( ModelSubdirectoryName, cerr )
+		&& model.Train( argv[0], cerr )
+		&& model.Save( argv[1], cerr ) );
 }
 
 //------------------------------------------------------------------------------

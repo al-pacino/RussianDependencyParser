@@ -9,53 +9,92 @@
 
 //------------------------------------------------------------------------------
 
-Model::Model(const char *dictdir) 
+void Model::Reset()
 {
-    countTagsPair.clear();
+	isInitialized = false;
+	countTagsPair.clear();
+	countWords = 0;
+	paradigms.clear();
+	prefixes.clear();
+	suffixes.clear();
+	tags.clear();
+	words.clear();
+	ends.clear();
+}
 
-    string dir = dictdir;
-    string path = dir + "/words.trie";
-    words.load(path.c_str());
+bool Model::Initialize( const string& dictionaryDirectory, ostream& errorStream )
+{
+	Reset();
 
-    path = dir + "/ends.trie";
-    ends.load(path.c_str());
+	try {
+		words.load( ( dictionaryDirectory + "/words.trie" ).c_str() );
+		ends.load( ( dictionaryDirectory + "/ends.trie" ).c_str() );
+	} catch( std::exception& e ) {
+		errorStream << "Error: " << e.what() << "." << endl;
+		return false;
+	}
 
-    int temp = 0;
-    string str;
-    path = dir + "/prefixes";
-    ifstream ifs(path);
-    ifs>>temp;
-    ifs.ignore(10, '\n');
-    prefixes = new string[temp];
-    for(int i = 0; i < temp; i++)
-        getline(ifs, prefixes[i]);
-    ifs.close();
+	if( !loadSimpleFile( dictionaryDirectory + "/prefixes", prefixes ) ) {
+		errorStream << "Error: Dictionary file '" << dictionaryDirectory
+			<< "/prefixes" << "' is corrupted." << endl;
+		return false;
+	}
 
-    path = dir + "/suffixes";
-    ifs.open(path);
-    ifs>>temp;
-    ifs.ignore(10, '\n');
-    suffixes = new string[temp];
-    for(int i = 0; i < temp; i++)
-        getline(ifs, suffixes[i]);
-    ifs.close();
+	if( !loadSimpleFile( dictionaryDirectory + "/suffixes", suffixes ) ) {
+		errorStream << "Error: Dictionary file '" << dictionaryDirectory
+			<< "/suffixes" << "' is corrupted." << endl;
+		return false;
+	}
 
-    path = dir + "/tags";
-    ifs.open(path);
-    ifs>>temp;
-    ifs.ignore(10, '\n');
-    tags = new string[temp];
-    for(int i = 0; i < temp; i++)
-        getline(ifs, tags[i]);
-    ifs.close();
+	if( !loadSimpleFile( dictionaryDirectory + "/tags", tags ) ) {
+		errorStream << "Error: Dictionary file '" << dictionaryDirectory
+			<< "/tags" << "' is corrupted." << endl;
+		return false;
+	}
 
-    path = dir + "/paradigms";
-    ifs.open(path);
-    ifs>>temp;
-    paradigms = new Paradigm[temp];
-    for(int i = 0; i < temp; i++)
-        paradigms[i].load(ifs);
-    ifs.close();
+	if( !loadParadigms( dictionaryDirectory + "/paradigms" ) ) {
+		errorStream << "Error: Dictionary file '" << dictionaryDirectory
+			<< "/paradigms" << "' is corrupted." << endl;
+		return false;
+	}
+}
+
+bool Model::loadSimpleFile( const string& filename, StringVector& data )
+{
+	data.clear();
+	ifstream file( filename );
+	if( file.good() ) {
+		size_t size;
+		file >> size;
+		file.ignore( 10, '\n' );
+		if( !file.fail() ) {
+			data.resize( size );
+			for( size_t i = 0; !file.fail() && i < size; i++ ) {
+				getline( file, data[i] );
+				if( !data[i].empty() && data[i].back() == '\r' ) {
+					data[i].pop_back();
+				}
+			}
+		}
+	}
+	return !file.fail();
+}
+
+bool Model::loadParadigms( const string& filename )
+{
+	paradigms.clear();
+	ifstream file( filename );
+	if( file.good() ) {
+		size_t size;
+		file >> size;
+		if( !file.fail() ) {
+			paradigms.resize( size );
+			for( size_t i = 0; !file.fail() && i < size; i++ ) {
+				paradigms[i].load( file );
+			}
+		}
+	}
+	return !file.fail();
 }
 
 bool Model::Load( const string& filename, ostream& out )
@@ -340,17 +379,6 @@ void Model::getTagsAndCount( const string& key,
 		variants.push_back( StringPair( "", tags[p] ) );
 		probs.push_back( n );
 	}
-}
-
-Model::~Model()
-{
-    countTagsPair.clear();
-    words.clear();
-    ends.clear();
-    delete [] paradigms;
-    delete [] tags;
-    delete [] prefixes;
-    delete [] suffixes;
 }
 
 //------------------------------------------------------------------------------
