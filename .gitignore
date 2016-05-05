@@ -1,3 +1,6 @@
+## Ignore dictionary files
+dict
+
 ## Ignore build results
 build
 vs2010/build
