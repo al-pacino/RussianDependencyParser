@@ -329,15 +329,6 @@ void Model::GetTags( const string& word,
 	}
 }
 
-static void parseAgentKey( const marisa::Agent& agent, int& p, int& n )
-{
-	string key( agent.key().ptr(), agent.key().ptr() + agent.key().length() );
-	istringstream iss( key );
-	string ignored;
-	iss >> ignored >> p >> n;
-	assert( !iss.fail() );
-}
-
 void Model::getNFandTags( const string& key, vector<StringPair>& variants ) const
 {
 	variants.clear();
@@ -379,6 +370,15 @@ void Model::getTagsAndCount( const string& key,
 		variants.push_back( StringPair( "", tags[p] ) );
 		probs.push_back( n );
 	}
+}
+
+void Model::parseAgentKey( const marisa::Agent& agent, int& p, int& n ) const
+{
+	string key( agent.key().ptr(), agent.key().ptr() + agent.key().length() );
+	istringstream iss( key );
+	string ignored;
+	iss >> ignored >> p >> n;
+	assert( !iss.fail() );
 }
 
 //------------------------------------------------------------------------------
