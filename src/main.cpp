@@ -64,9 +64,11 @@ bool WriteSentence( const tinyxml2::XMLElement* seElem,
 		}
 
 		string word( wElem->GetText() == nullptr ? "_" : wElem->GetText() );
-		/* if (!word[0].isPunct() && word[word.size() - 1].isPunct()) {
-			word.chop(1);
-		} */
+		if( !Utf8::StartsWithPunctuationMark( word )
+			&& Utf8::EndsWithPunctuationMark( word ) )
+		{
+			word.pop_back();
+		}
 
 		const char* idHead = relElem->Attribute( "id_head" );
 		if( idHead == nullptr || *idHead == '\0' ) {
