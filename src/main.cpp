@@ -39,7 +39,7 @@ void SplitTags( const string& tags, string& firstTag, string& restTags )
 }
 
 bool WriteSentence( const tinyxml2::XMLElement* seElem,
-	ostream& out,  const Model& model )
+	ostream& out, const Model& model )
 {
 	using namespace tinyxml2;
 
@@ -90,15 +90,14 @@ bool WriteSentence( const tinyxml2::XMLElement* seElem,
 			<< firstTag << "\t" << firstTag << "\t" << restTags
 			<< "\t" << idHead << "\t" << type << "\t_\t_" << endl;
 	}
-	out << endl;
+
+	return true;
 }
 
 bool WriteMorph( const string& xmlFilename,
-	const string& outputFilename, const Model& model )
+	ostream& out, const Model& model )
 {
 	using namespace tinyxml2;
-
-	ofstream out( outputFilename, ios::out | ios::trunc );
 
 	XMLDocument doc;
 	if( doc.LoadFile( xmlFilename.c_str() ) != XML_NO_ERROR ) {
@@ -127,8 +126,10 @@ bool WriteMorph( const string& xmlFilename,
 			if( !WriteSentence( seElem, out, model ) ) {
 				return false;
 			}
+			out << endl;
 		}
 	}
+
 	return true;
 }
 
@@ -137,7 +138,23 @@ bool SaveMorph( const string& modelFilename,
 {
 	Model model( ModelSubdirectoryName );
 	model.Load( modelFilename, cerr );
-	return WriteMorph( textFilename, morphFilename, model );
+
+	ofstream morphStream( morphFilename, ios::out | ios::trunc );
+	if( morphStream.good()
+		&& !WriteMorph( textFilename, morphStream, model ) )
+	{
+		cerr << "Error: Wrong text file '"
+			<< textFilename << "'." << endl;
+		return false;
+	}
+
+	if( !morphStream.good() ) {
+		cerr << "Error: Cannot open or write morph file '"
+			<< morphFilename << "'." << endl;
+		return false;
+	}
+
+	return true;
 }
 
 //------------------------------------------------------------------------------
