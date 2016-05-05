@@ -39,7 +39,7 @@ void SplitTags( const string& tags, string& firstTag, string& restTags )
 }
 
 bool WriteSentence( const tinyxml2::XMLElement* seElem,
-	ostream& out, /* const */ Model& model )
+	ostream& out,  const Model& model )
 {
 	using namespace tinyxml2;
 
@@ -92,7 +92,7 @@ bool WriteSentence( const tinyxml2::XMLElement* seElem,
 }
 
 bool WriteMorph( const string& xmlFilename,
-	const string& outputFilename, /* const */ Model& model )
+	const string& outputFilename, const Model& model )
 {
 	using namespace tinyxml2;
 
