@@ -394,7 +394,7 @@ string ToUppercase( const string& text )
 	for( size_t pos = 0; pos < result.length(); pos++ ) {
 		unsigned char c = result[pos];
 		if( c < 128 ) {
-			result[pos] = ::toupper( result[pos] );
+			result[pos] = static_cast<char>( ::toupper( result[pos] ) );
 		} else if( c == 0xD0 ) {
 			unsigned char nc = result[pos + 1];
 			if( nc >= 0xB0 && nc <= 0xBF ) {
@@ -465,8 +465,8 @@ bool StartsWithDigit( const string& word )
 bool StartsWithLatinLetter( const string& word )
 {
 	return ( !word.empty()
-		&& ( word[0] >= 'a' && word[0] <= 'z'
-			|| word[0] >= 'A' && word[0] <= 'Z' ) );
+		&& ( ( word[0] >= 'a' && word[0] <= 'z' )
+			|| ( word[0] >= 'A' && word[0] <= 'Z' ) ) );
 }
 
 } // end of Utf8 namespace
