@@ -341,7 +341,7 @@ void Model::getNFandTags( const string& key, vector<StringPair>& variants ) cons
 
 	while( words.predictive_search( agent ) ) {
 		string normalForm = key;
-		int p, n;
+		size_t p, n;
 		parseAgentKey( agent, p, n );
 		string suffix = suffixes[paradigms[p].getSuffix(n)];
 		normalForm = normalForm.substr(0, normalForm.size() - suffix.size());
@@ -367,14 +367,14 @@ void Model::getTagsAndCount( const string& key,
 	agent.set_query( agentQuery.data(), agentQuery.length() );
 
 	while( words.predictive_search( agent ) ) {
-		int p, n;
+		size_t p, n;
 		parseAgentKey( agent, p, n );
 		variants.push_back( StringPair( "", tags[p] ) );
 		probs.push_back( n );
 	}
 }
 
-void Model::parseAgentKey( const marisa::Agent& agent, int& p, int& n ) const
+void Model::parseAgentKey( const marisa::Agent& agent, size_t& p, size_t& n ) const
 {
 	string key( agent.key().ptr(), agent.key().ptr() + agent.key().length() );
 	istringstream iss( key );

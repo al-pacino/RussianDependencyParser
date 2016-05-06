@@ -66,7 +66,7 @@ private:
 	void getNFandTags( const string& key, vector<StringPair>& variants ) const;
 	void getTagsAndCount( const string& key,
 		vector<StringPair>& variants, vector<uint>& probs ) const;
-	void parseAgentKey( const marisa::Agent& agent, int& p, int& n ) const;
+	void parseAgentKey( const marisa::Agent& agent, size_t& p, size_t& n ) const;
 	bool loadSimpleFile( const string& filename, StringVector& data );
 	bool loadParadigms( const string& filename );
 };
